@@ -1,0 +1,5 @@
+{
+  "type":"FeatureCollection","geofenceSchema":1,
+  "dataset":{"id":"d","revision":1,"generatedAt":"2026-11-12T00:00:00Z"},
+  "features":[{"type":"Feature","id":"a","properties":{},"geometry":{"type":"Polygon","coordinates":[[[179,0],[-179,0],[-179,1],[179,1],[179,0]]]}}]
+}

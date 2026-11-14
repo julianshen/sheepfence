@@ -1,0 +1,19 @@
+{
+  "type": "FeatureCollection",
+  "geofenceSchema": 1,
+  "dataset": { "id": "com.example.winding", "revision": 2, "generatedAt": "2026-11-12T00:00:00.123Z" },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "w",
+      "properties": { "priority": -1 },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [[10.0,20.0],[10.0,20.004],[10.006,20.004],[10.006,20.0],[10.0,20.0]],
+          [[10.0045,20.001],[10.0055,20.001],[10.0055,20.002],[10.0045,20.002],[10.0045,20.001]]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "geofenceSchema": 1,
+  "dataset": { "id": "com.example.test", "revision": 1, "generatedAt": "2026-11-12T00:00:00Z" },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "poly",
+      "properties": { "name": "Poly", "enabled": true, "priority": 2 },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [[10.0,20.0],[10.006,20.0],[10.006,20.004],[10.0,20.004],[10.0,20.0]],
+          [[10.0045,20.001],[10.0045,20.002],[10.0055,20.002],[10.0055,20.001],[10.0045,20.001]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "multi",
+      "properties": {},
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [[[10.01,20.0],[10.012,20.0],[10.012,20.002],[10.01,20.002],[10.01,20.0]]],
+          [[[10.02,20.0],[10.022,20.0],[10.022,20.002],[10.02,20.002],[10.02,20.0]]]
+        ]
+      }
+    }
+  ]
+}
