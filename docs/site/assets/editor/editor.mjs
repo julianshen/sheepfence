@@ -1,10 +1,12 @@
-import {t} from './i18n.mjs?v=l10n-1';
-import {clone,freshSnapshot,closeRing,polygons,validateSnapshot,readImport,serialize,MAX_BYTES} from './model.mjs?v=l10n-1';
-import {PlaceLookup} from './places.mjs?v=l10n-1';
+import {runUnion} from './union-job.mjs?v=union-1';
+import {t} from './i18n.mjs?v=union-1';
+import {clone,freshSnapshot,closeRing,polygons,validateSnapshot,readImport,serialize,MAX_BYTES} from './model.mjs?v=union-1';
+import {PlaceLookup} from './places.mjs?v=union-1';
 const $=id=>document.getElementById(id);
 const STORAGE='sheepfence-studio-v1';
 let snapshot=freshSnapshot(), selected=-1, part=0, ringIndex=0, vertex=-1;
 let activeLookup=null, placeService=null, editGeneration=0, selectionTimer=null;
+let unionChecked=new Set(), activeUnion=null;
 let drawing=null, past=[], future=[], datasetDirty=false, featureDirty=false;
 const message=(text,error=false)=>{$('status').textContent=text;$('status').classList.toggle('error',error);};
 function ready(allowDrawing=false) {
@@ -37,7 +39,7 @@ function commit(next,text,options={}){
   try{validateSnapshot(next);}catch(error){message(error.message,true);return false;}
   invalidateLookup();
   past.push(clone(snapshot));if(past.length>30)past.shift();future=[];
-  snapshot=next;
+  snapshot=next;unionChecked.clear();
   if(options.select!==undefined)selected=options.select;
   if(selected>=snapshot.features.length)selected=snapshot.features.length-1;
   vertex=-1;datasetDirty=false;featureDirty=false;
@@ -61,7 +63,12 @@ function render(){
     const swatch=document.createElement('span');swatch.className='swatch';if(f.properties.enabled===false)swatch.style.background='#9daca1';
     const body=document.createElement('span'),title=document.createElement('strong'),subtitle=document.createElement('small');
     title.textContent=f.properties.name||f.id;subtitle.textContent=`${f.id} · ${f.geometry.type}${f.properties.enabled===false?' · '+t('disabled'):''}`;
-    body.append(title,subtitle);button.append(swatch,body);button.addEventListener('click',()=>selectFence(i));$('fence-list').append(button);
+    body.append(title,subtitle);button.append(swatch,body);button.addEventListener('click',()=>selectFence(i));
+    const row=document.createElement('div');row.className='fence-row';
+    const check=document.createElement('input');check.type='checkbox';check.className='union-check';check.checked=unionChecked.has(f.id);check.disabled=!!drawing;
+    check.setAttribute('aria-label',t`Include ${f.properties.name||f.id} in union`);
+    check.onchange=()=>{if(!ready()){check.checked=unionChecked.has(f.id);return;}invalidateLookup();check.checked?unionChecked.add(f.id):unionChecked.delete(f.id);renderUnion();renderMap();};
+    row.append(check,button);$('fence-list').append(row);
   });
   $('feature-panel').hidden=!feature();
   if(feature()){
@@ -80,13 +87,42 @@ function render(){
   $('undo').disabled=!past.length||!!drawing;$('redo').disabled=!future.length||!!drawing;
   for(const id of ['quick-add','draw','hole','part','delete','new','import','export','preview','ring'])$(id).disabled=!!drawing;
   const stats=validateSnapshot(snapshot);$('stats').textContent=t`${stats.regions} fences · ${stats.vertices.toLocaleString()} vertices`;
-  renderMap();renderVertex();renderDraft();
+  renderUnion();renderMap();renderVertex();renderDraft();
 }
+function renderUnion(){
+  const selector=$('union-properties'),previous=selector.value;
+  const inputs=snapshot.features.filter(f=>unionChecked.has(f.id));
+  unionChecked=new Set(inputs.map(f=>f.id));
+  selector.replaceChildren();
+  for(const f of inputs){const option=document.createElement('option');option.value=f.id;option.textContent=`${f.properties.name||f.id} · ${f.id}`;selector.append(option);}
+  if(unionChecked.has(previous))selector.value=previous;
+  selector.disabled=!!drawing||!inputs.length||!!activeUnion;
+  $('union').disabled=!!drawing||inputs.length<2||!!activeUnion;
+  $('cancel-union').hidden=!activeUnion;
+  $('union-selection').textContent=t`${inputs.length} fences checked`;
+}
+$('union-properties').onchange=()=>invalidateLookup();
+$('cancel-union').onclick=()=>{invalidateLookup();message(t('Union cancelled. Existing fences are unchanged.'));};
+$('union').onclick=async()=>{
+  if(!ready()||unionChecked.size<2||activeUnion)return;
+  const ids=[...unionChecked],propertiesFrom=$('union-properties').value;
+  if(!confirm(t`Replace ${ids.length} checked fences with their union? A new feature ID will be created. Other metadata is retained in unionSources. You can undo this.`))return;
+  invalidateLookup();const operation={controller:new AbortController(),generation:editGeneration};activeUnion=operation;renderUnion();
+  message(t('Combining fence areas…'));
+  try{
+    const result=await runUnion(snapshot,ids,propertiesFrom,operation.controller.signal);
+    if(activeUnion!==operation||operation.generation!==editGeneration)return;
+    activeUnion=null;part=0;ringIndex=0;
+    commit(result.snapshot,t('Union saved. Review its boundary and increment the revision before publishing. Undo restores the original fences.'),{select:result.index});
+  }catch(error){
+    if(activeUnion===operation)message(t('Union could not be completed within the editor limits. Try fewer or simpler fences. Existing fences are unchanged.'),true);
+  }finally{if(activeUnion===operation)activeUnion=null;renderUnion();}
+};
 function selectFence(index){if(!ready())return;selected=index;part=0;ringIndex=0;vertex=-1;render();message(t('Drag vertices to edit. Changes are checked before they are saved.'));}
 function renderMap(){
   shapes.clearLayers();handles.clearLayers();
   snapshot.features.forEach((f,i)=>{
-    const layer=L.geoJSON(f,{interactive:!drawing,style:{color:i===selected?'#184e3b':'#598b6a',weight:i===selected?3:2,fillColor:i===selected?'#73ac74':'#99b5a0',fillOpacity:f.properties.enabled===false?0.08:0.24,dashArray:f.properties.enabled===false?'5 5':null}}).addTo(shapes);
+    const layer=L.geoJSON(f,{interactive:!drawing,style:{color:unionChecked.has(f.id)?'#916d21':i===selected?'#184e3b':'#598b6a',weight:i===selected?3:2,fillColor:i===selected?'#73ac74':'#99b5a0',fillOpacity:f.properties.enabled===false?0.08:0.24,dashArray:f.properties.enabled===false?'5 5':null}}).addTo(shapes);
     layer.on('click',e=>{
       L.DomEvent.stopPropagation(e);clearTimeout(selectionTimer);
       selectionTimer=setTimeout(()=>selectFence(i),250);
@@ -145,6 +181,7 @@ map.on('click',e=>{
 
 function invalidateLookup(){
   editGeneration++;
+  if(activeUnion){activeUnion.controller.abort();activeUnion=null;renderUnion();}
   if(activeLookup){activeLookup.controller.abort();activeLookup=null;}
   $('cancel-lookup').hidden=true;$('quick-add').disabled=!!drawing;
 }
@@ -249,10 +286,10 @@ $('delete').onclick=()=>{
   const next=clone(snapshot);next.features.splice(selected,1);part=0;ringIndex=0;commit(next,t('Fence deleted.'));
 };
 $('undo').onclick=()=>{
-  if(!ready()||!past.length)return;invalidateLookup();future.push(clone(snapshot));snapshot=past.pop();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message(t('Undid the last change.'));
+  if(!ready()||!past.length)return;invalidateLookup();future.push(clone(snapshot));snapshot=past.pop();unionChecked.clear();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message(t('Undid the last change.'));
 };
 $('redo').onclick=()=>{
-  if(!ready()||!future.length)return;invalidateLookup();past.push(clone(snapshot));snapshot=future.pop();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message(t('Redid the change.'));
+  if(!ready()||!future.length)return;invalidateLookup();past.push(clone(snapshot));snapshot=future.pop();unionChecked.clear();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message(t('Redid the change.'));
 };
 $('new').onclick=()=>{if(!ready()||!confirm(t('Start a new dataset? Download your current snapshot to keep a separate copy. You can undo this.')))return;part=0;ringIndex=0;commit(freshSnapshot(),t('New dataset started.'),{select:-1});};
 function fit(){if(snapshot.features.length)map.fitBounds(shapes.getBounds(),{padding:[40,40],maxZoom:18});else message(t('Draw or import a fence first.'));}
@@ -300,6 +337,7 @@ $('copy').onclick=async()=>{
   catch{$('json-preview').focus();$('json-preview').select();message(t('Clipboard unavailable. Select and copy the preview manually.'),true);}
 };
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&activeUnion){$('cancel-union').click();return;}
   if(e.key==='Escape'&&activeLookup){cancelLookup();return;}
   if(e.key==='Escape'&&drawing){$('cancel-draw').click();return;}
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;

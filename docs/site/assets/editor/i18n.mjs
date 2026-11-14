@@ -10,7 +10,7 @@ export function translator(messages = {}) {
 export const locale = globalThis.document?.documentElement.lang || 'en';
 let messages = {};
 if (locale !== 'en' && globalThis.document) {
-  const response = await fetch(new URL('./messages.json?v=l10n-1', import.meta.url));
+  const response = await fetch(new URL('./messages.json?v=union-1', import.meta.url));
   if (!response.ok) throw new Error('Unable to load language messages. Please reload.');
   messages = (await response.json())[locale] || {};
 }

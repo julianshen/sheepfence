@@ -1,4 +1,4 @@
-import {t} from './i18n.mjs?v=l10n-1';
+import {t} from './i18n.mjs?v=union-1';
 // Browser-side authoring checks mirror the SDK's coordinate-linear topology rules.
 // The Swift importer remains the authoritative validator for installed snapshots.
 export const MAX_BYTES = 5_000_000;

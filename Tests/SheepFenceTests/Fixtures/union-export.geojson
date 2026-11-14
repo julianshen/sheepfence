@@ -1,0 +1,121 @@
+{
+  "type": "FeatureCollection",
+  "geofenceSchema": 1,
+  "dataset": {
+    "id": "test.union",
+    "revision": 1,
+    "generatedAt": "2026-11-14T00:00:00Z"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "union-1",
+      "properties": {
+        "name": "Chosen 日本語",
+        "enabled": true,
+        "priority": 5,
+        "unionSources": [
+          {
+            "id": "a",
+            "properties": {
+              "name": "a",
+              "enabled": true,
+              "priority": 0
+            }
+          },
+          {
+            "id": "b",
+            "properties": {
+              "name": "Chosen 日本語",
+              "enabled": true,
+              "priority": 5
+            }
+          },
+          {
+            "id": "c",
+            "properties": {
+              "name": "c",
+              "enabled": true,
+              "priority": 0
+            }
+          }
+        ]
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                10,
+                20
+              ],
+              [
+                10.069999999999999,
+                20
+              ],
+              [
+                10.069999999999999,
+                20.04
+              ],
+              [
+                10,
+                20.04
+              ],
+              [
+                10,
+                20
+              ]
+            ],
+            [
+              [
+                10.01,
+                20.01
+              ],
+              [
+                10.01,
+                20.020000000000003
+              ],
+              [
+                10.02,
+                20.020000000000003
+              ],
+              [
+                10.02,
+                20.01
+              ],
+              [
+                10.01,
+                20.01
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                10.1,
+                20
+              ],
+              [
+                10.12,
+                20
+              ],
+              [
+                10.12,
+                20.020000000000003
+              ],
+              [
+                10.1,
+                20.020000000000003
+              ],
+              [
+                10.1,
+                20
+              ]
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

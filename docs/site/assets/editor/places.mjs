@@ -1,5 +1,5 @@
-import {t} from './i18n.mjs?v=l10n-1';
-import {clone,classify,validateGeometry,MAX_BYTES} from './model.mjs?v=l10n-1';
+import {t} from './i18n.mjs?v=union-1';
+import {clone,classify,validateGeometry,MAX_BYTES} from './model.mjs?v=union-1';
 
 const same=(a,b)=>a[0]===b[0]&&a[1]===b[1];
 function positions(geometry) {

@@ -216,7 +216,18 @@
     "Place lookup timed out. Try again later or draw the fence manually.": "地點查詢逾時，請稍後重試或手動繪製。",
     "Boundary service unavailable. Check your connection or draw the fence manually.": "無法使用邊界服務，請檢查網路或手動繪製。",
     "disabled": "已停用",
-    "No fences yet. Double-click a building or place to add its mapped boundary, or choose Draw fence.": "尚無圍欄。按兩下建築物或地點來新增其邊界，或選擇「繪製圍欄」。"
+    "No fences yet. Double-click a building or place to add its mapped boundary, or choose Draw fence.": "尚無圍欄。按兩下建築物或地點來新增其邊界，或選擇「繪製圍欄」。",
+    "Check two or more fences to union their areas.": "勾選至少兩個圍欄以合併其區域。",
+    "Keep name, enabled and priority from": "名稱、啟用狀態及優先順序來源",
+    "Union checked fences": "合併勾選的圍欄",
+    "Cancel union": "取消合併",
+    "Include {0} in union": "將 {0} 納入合併",
+    "{0} fences checked": "已勾選 {0} 個圍欄",
+    "Union cancelled. Existing fences are unchanged.": "已取消合併，既有圍欄不變。",
+    "Replace {0} checked fences with their union? A new feature ID will be created. Other metadata is retained in unionSources. You can undo this.": "以聯集合併結果取代 {0} 個勾選圍欄？將建立新的要素 ID，其他中繼資料保留於 unionSources。此操作可復原。",
+    "Combining fence areas…": "正在合併圍欄區域…",
+    "Union saved. Review its boundary and increment the revision before publishing. Undo restores the original fences.": "已儲存合併結果。發布前請檢查邊界並增加修訂版號。復原可還原原始圍欄。",
+    "Union could not be completed within the editor limits. Try fewer or simpler fences. Existing fences are unchanged.": "無法在編輯器限制內完成合併，請減少圍欄或簡化形狀。既有圍欄不變。"
   },
   "ja": {
     "Skip to content": "本文へ移動",
@@ -435,6 +446,17 @@
     "Place lookup timed out. Try again later or draw the fence manually.": "場所の検索がタイムアウトしました。後で再試行するか手動で描画してください。",
     "Boundary service unavailable. Check your connection or draw the fence manually.": "境界サービスを利用できません。接続を確認するか手動で描画してください。",
     "disabled": "無効",
-    "No fences yet. Double-click a building or place to add its mapped boundary, or choose Draw fence.": "フェンスはまだありません。建物や場所をダブルクリックして境界を追加するか、「フェンスを描画」を選んでください。"
+    "No fences yet. Double-click a building or place to add its mapped boundary, or choose Draw fence.": "フェンスはまだありません。建物や場所をダブルクリックして境界を追加するか、「フェンスを描画」を選んでください。",
+    "Check two or more fences to union their areas.": "2 つ以上のフェンスにチェックして領域を結合します。",
+    "Keep name, enabled and priority from": "名前・有効状態・優先度の引き継ぎ元",
+    "Union checked fences": "チェックしたフェンスを結合",
+    "Cancel union": "結合をキャンセル",
+    "Include {0} in union": "{0} を結合に含める",
+    "{0} fences checked": "{0} フェンスを選択中",
+    "Union cancelled. Existing fences are unchanged.": "結合をキャンセルしました。既存のフェンスは変更していません。",
+    "Replace {0} checked fences with their union? A new feature ID will be created. Other metadata is retained in unionSources. You can undo this.": "選択した {0} フェンスを結合結果に置き換えますか？新しいフィーチャー ID を作成し、その他のメタデータは unionSources に保持します。元に戻せます。",
+    "Combining fence areas…": "フェンスの領域を結合中…",
+    "Union saved. Review its boundary and increment the revision before publishing. Undo restores the original fences.": "結合結果を保存しました。境界を確認し、公開前にリビジョンを増やしてください。「元に戻す」で元のフェンスを復元できます。",
+    "Union could not be completed within the editor limits. Try fewer or simpler fences. Existing fences are unchanged.": "エディターの制限内で結合できませんでした。フェンスの数を減らすか形状を簡単にしてください。既存のフェンスは変更していません。"
   }
 }

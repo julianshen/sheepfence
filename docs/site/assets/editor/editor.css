@@ -3,3 +3,5 @@
 .language-switch{display:flex;justify-content:flex-end;align-items:center;gap:16px;min-height:38px;padding:7px 24px;border-bottom:1px solid #d8e1d7;background:#f5f7ef;font:12px/1.5 system-ui,sans-serif;color:#52685c}.language-switch a{color:#245c47;text-decoration:none}.language-switch a[aria-current]{font-weight:750;text-decoration:underline;text-underline-offset:4px}.language-switch a:focus-visible{outline:2px solid #245c47;outline-offset:4px}@media(max-width:760px){.language-switch{justify-content:center;padding:8px 12px;gap:14px}}
 @media(min-width:761px){.workspace{height:calc(100dvh - 114px)}}
 html:lang(ja) .map-toolbar,html:lang(zh-Hant) .map-toolbar{flex-wrap:wrap}html:lang(ja) .statusbar,html:lang(zh-Hant) .statusbar{min-height:48px;height:auto;flex-wrap:wrap}html:lang(ja) .small-actions,html:lang(zh-Hant) .small-actions{flex-wrap:wrap}
+
+.fence-row{display:flex;align-items:center;gap:9px}.fence-row .union-check{width:18px;height:18px;flex:0 0 18px;accent-color:#916d21}.fence-row .fence-item{flex:1;min-width:0}.union-tools{padding:0 0 12px}.union-tools .row{flex-wrap:wrap;margin-top:10px}.union-tools .hint{margin:6px 0}.union-tools select{width:100%}

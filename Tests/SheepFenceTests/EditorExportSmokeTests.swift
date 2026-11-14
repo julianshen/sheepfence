@@ -25,4 +25,17 @@ import Testing
         #expect(region.geometry.polygons.count == 1)
     }
 
+    @Test func unionExportImportsWithHoleAndDisconnectedPart() throws {
+        // Exported by the browser union worker, combining three source fences.
+        let url = try #require(Bundle.module.url(forResource: "union-export", withExtension: "geojson"))
+        let snapshot = try GeoJSONDecoder.decode(Data(contentsOf: url))
+        #expect(snapshot.metadata.revision == 1)
+        #expect(snapshot.regions.count == 1)
+        let region = try #require(snapshot.regions.first)
+        #expect(region.id.featureID == "union-1")
+        #expect(region.name == "Chosen 日本語")
+        #expect(region.geometry.polygons.count == 2)
+        #expect(region.geometry.polygons[0].rings.count == 2)
+    }
+
 }

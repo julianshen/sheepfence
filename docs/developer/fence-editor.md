@@ -42,6 +42,14 @@ The editor checks required metadata, coordinate ranges, closed rings, degenerate
 
 Editor limits are 100 features, 1,000 vertices per ring, 10,000 vertices total and a 5 MB import/export limit. They are authoring limits, not a statement of every SDK geometry limit. The basemap uses Web Mercator, so Go navigation is limited to ±85° latitude. This editor's authoring checks are not a substitute for the Swift importer's authoritative validation or real-world boundary verification.
 
+## Union multiple fences
+
+Check the boxes beside two or more fences, choose **Keep name, enabled and priority from**, then choose **Union checked fences** and confirm. Checked shapes are highlighted in gold. The operation replaces those features with one new `union-N` feature; other fences are unchanged. Overlapping areas and shared edges merge, holes remain unless another selected area fills them, and disconnected areas become MultiPolygon parts. This is a geometric union, not a bounding rectangle or convex hull.
+
+The result takes its display name, enabled state and priority from the chosen fence. Original IDs and properties are retained under `properties.unionSources`; OSM attribution and license references are preserved. The result is not marked as an original OSM object. The dataset revision is unchanged: **increment it before publishing edited content**.
+
+Union runs locally in a worker with a 15-second limit. **Cancel union** or Escape stops it. Editing the dataset also cancels pending work. Invalid or oversized results leave the originals unchanged. **Undo** restores every original feature; **Redo** reapplies the union. Saved drafts and downloaded GeoJSON include the completed result.
+
 ## Privacy and map tiles
 
 Fence editing and exports are processed locally. Quick add sends the clicked latitude and longitude to the configured OpenStreetMap boundary service; existing fence geometry is not uploaded. Valid committed edits are autosaved in this browser's local storage when available. There is no account, fence-upload endpoint, analytics or location-history upload. Download a backup before clearing browser data or using a different browser; private browsing and storage limits can prevent draft saving. Unfinished drawing points are not autosaved. Do not store sensitive boundary data in a shared browser profile.
