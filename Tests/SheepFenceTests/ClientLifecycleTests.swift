@@ -7,7 +7,8 @@ import Testing
     var starts = 0
     var stops = 0
     var settings: [SamplingSettings] = []
-    func start() { starts += 1 }
+    var settingsAtStart: [SamplingSettings?] = []
+    func start() { starts += 1; settingsAtStart.append(settings.last) }
     func stop() { stops += 1 }
     func apply(_ value: SamplingSettings) { settings.append(value) }
 }
@@ -63,5 +64,24 @@ import Testing
         // Explicit stop after both also proves repeated stop is safe.
         await client.stopMonitoring()
         #expect(provider.onEvent == nil)
+    }
+    @Test func initialSamplingIsAppliedBeforeEveryProviderStart() async throws {
+        let snapshot = EngineIntegrationTests().snapshot(1)
+        let engine = GeofenceEngine(configuration: try GeofenceConfiguration(maximumLocationAge: 100),
+            store: TestSnapshotStore(), source: UnusedSource(), decoder: { _ in snapshot },
+            geometry: GeometryOperations(contains: { _, _ in true }, distance: { _, _ in 100 }), snapshots: [snapshot])
+        let provider = FakeLocationProvider()
+        var resets = 0
+        let initial = SamplingSettings(distanceFilter: 1, desiredAccuracy: 2)
+        let client = SheepFenceClient(engine: engine, provider: provider,
+            sampling: { _, _ in SamplingSettings(distanceFilter: 50, desiredAccuracy: 100) },
+            resetSampling: { resets += 1; return initial })
+        try await client.startMonitoring(mode: .sdkManaged)
+        try await client.startMonitoring(mode: .sdkManaged)
+        await client.stopMonitoring()
+        try await client.startMonitoring(mode: .sdkManaged)
+        #expect(resets == 2)
+        #expect(provider.settingsAtStart == [initial, initial])
+        await client.stopMonitoring()
     }
 }

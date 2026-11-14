@@ -8,13 +8,14 @@ source with the `SheepFence` library product.
 
 Implementation is in progress. The package now contains strict GeoJSON import,
 polygon/hole/MultiPolygon containment, uncertainty-aware observations, serialized
-Core Data persistence, immutable query snapshots, and an internal foreground client
+Core Data persistence, immutable query snapshots, and a public foreground client
 facade. Tests exercise real import/store/engine paths for both 100-region workloads.
 
-It is **not ready for app integration**: the public construction path, production
-snapshot downloader, Core Location provider, and adaptive sampling are not wired
-up yet. Final cross-review, device lifecycle checks, and field/performance acceptance
-remain pending. See [implementation progress](docs/implementation/progress.md).
+The public construction path restores SQLite snapshots and connects the local/HTTPS
+source, Core Location provider, and adaptive sampling. Source/provider cross-review
+and regression fixes are complete for this checkpoint (86 package tests pass). Device lifecycle checks and field/performance
+acceptance remain pending; this is not a release-ready SDK.
+See [implementation progress](docs/implementation/progress.md).
 
 Distance evaluation uses an approximate local meter model, currently limited to
 query latitudes within 80 degrees and vertices within one degree of the query.
@@ -38,6 +39,38 @@ before release. No third-party dependencies are required by this scaffold.
 The host owns foreground lifecycle and Core Location permission prompts, including
 `NSLocationWhenInUseUsageDescription`. `GeofenceConfiguration` requires an explicit
 location validity window; the specification does not yet prescribe one.
+
+## Opening a client
+
+Call from the main actor with a writable SQLite file URL in an existing directory:
+
+```swift
+let client = try await SheepFenceClient.open(
+    storeURL: storeURL,
+    configuration: GeofenceConfiguration(maximumLocationAge: 60),
+    downloadPolicy: DownloadPolicy(maximumBytes: 5_000_000, timeout: 30),
+    samplingConfiguration: SamplingPolicyConfiguration()
+)
+let events = await client.events()
+let eventTask = Task {
+    for await event in events {
+        // Handle baseline, movement, dataset and availability events.
+    }
+}
+try await client.installSnapshot(from: bundledGeoJSONURL)
+try await client.startMonitoring(mode: .sdkManaged)
+// When the host leaves the foreground:
+await client.stopMonitoring()
+eventTask.cancel()
+```
+
+The values above illustrate configuration, not measured product thresholds.
+The host requests location authorization separately. Use `.hostProvided` when
+the app owns location acquisition, then call `evaluate(location:)` and
+`updateAvailability(_:)`; do not mix both sources in one active session.
+Coordinate-only `query(coordinate:in:)` works offline after restoration and does
+not emit movement events. Retain the client for the session and explicitly stop
+monitoring when the host leaves the foreground.
 
 ## Implementation sequence
 

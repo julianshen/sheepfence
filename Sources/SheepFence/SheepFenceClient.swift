@@ -4,15 +4,45 @@ import Foundation
 @MainActor public final class SheepFenceClient: GeofenceClient {
     private let engine: GeofenceEngine
     private let provider: any LocationProvider
-    private let sampling: @Sendable (Double?, LocationSample) -> SamplingSettings
+    private let sampling: @MainActor @Sendable (Double?, LocationSample) -> SamplingSettings
+    private let resetSampling: @MainActor @Sendable () -> SamplingSettings?
     private var mode: LocationSourceMode?
     private var providerRunning = false
     private var generation: UInt64 = 0
     private var lifecycleTail: Task<Void, Never>?
 
     init(engine: GeofenceEngine, provider: any LocationProvider,
-         sampling: @escaping @Sendable (Double?, LocationSample) -> SamplingSettings) {
+         sampling: @escaping @MainActor @Sendable (Double?, LocationSample) -> SamplingSettings,
+         resetSampling: @escaping @MainActor @Sendable () -> SamplingSettings? = { nil }) {
         self.engine = engine; self.provider = provider; self.sampling = sampling
+        self.resetSampling = resetSampling
+    }
+
+    /// Opens a persistent store and restores committed datasets before returning.
+    /// The host supplies a writable SQLite URL and owns permissions and foreground lifecycle.
+    public static func open(storeURL: URL, configuration: GeofenceConfiguration,
+                            downloadPolicy: DownloadPolicy,
+                            samplingConfiguration: SamplingPolicyConfiguration) async throws -> SheepFenceClient {
+        let (store, snapshots) = try await Task.detached {
+            let store = try CoreDataSnapshotStore(url: storeURL)
+            return (store, try await store.loadCommittedSnapshots())
+        }.value
+        try Task.checkCancellation()
+        let engine = GeofenceEngine(configuration: configuration, store: store,
+            source: HTTPSnapshotSource(policy: downloadPolicy),
+            decoder: { try GeoJSONDecoder.decode($0) },
+            geometry: GeometryOperations(contains: { Geometry.contains($0, in: $1) },
+                distance: { Geometry.distanceToBoundary($0, in: $1) },
+                candidate: { Geometry.isCandidate($0, radiusMeters: $1, bounds: $2) }),
+            snapshots: snapshots)
+        var policy = SamplingPolicy(configuration: samplingConfiguration)
+        return SheepFenceClient(engine: engine, provider: CoreLocationProvider(),
+            sampling: { distance, sample in
+                policy.settings(nearestBoundaryMeters: distance, accuracy: sample.horizontalAccuracy, speed: sample.speed)
+            }, resetSampling: {
+                policy = SamplingPolicy(configuration: samplingConfiguration)
+                return policy.settings(nearestBoundaryMeters: nil, accuracy: .infinity, speed: nil)
+            })
     }
 
     public func events() async -> AsyncStream<GeofenceEvent> { await engine.events() }
@@ -101,6 +131,7 @@ import Foundation
             }
         }
         providerRunning = true
+        if let initial = resetSampling() { provider.apply(initial) }
         provider.start()
     }
 }

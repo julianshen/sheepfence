@@ -12,6 +12,14 @@ final class CoreDataSnapshotStore: SnapshotStore, @unchecked Sendable {
     private let queue = DispatchQueue(label: "SheepFence.CoreDataSnapshotStore")
     private let beforeCommit: CommitInterceptor
     private let beforeSave: SaveInterceptor
+    private var readCount = 0
+
+    var readCountSnapshot: Int {
+        queue.sync { readCount }
+    }
+    func resetReadCount() {
+        queue.sync { readCount = 0 }
+    }
 
     init(
         url: URL,
@@ -114,6 +122,7 @@ final class CoreDataSnapshotStore: SnapshotStore, @unchecked Sendable {
     ) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {
+                self.readCount += 1
                 let result: Result<T, Error> = self.context.performAndWait {
                     do { return .success(try operation(self.context)) }
                     catch { return .failure(error) }

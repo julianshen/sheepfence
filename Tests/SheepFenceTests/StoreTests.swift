@@ -19,7 +19,9 @@ import Testing
         }
 
         let reopened = try CoreDataSnapshotStore(url: url)
+        #expect(reopened.readCountSnapshot == 0)
         #expect(try await reopened.loadCommittedSnapshots() == [snapshot])
+        #expect(reopened.readCountSnapshot == 1)
     }
 
     @Test func replacementRemovesOldRegionsAndAllowsEmptyDataset() async throws {

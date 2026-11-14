@@ -11,6 +11,54 @@ actor StoreReadProbe: SnapshotStore {
 }
 
 @Suite struct AcceptanceTests {
+    @Test func campusGardenMovementAndJitterUseProductionGeometry() async throws {
+        let engine = try runtime(store: CoreDataSnapshotStore(inMemory: true))
+        let fixture = try #require(Bundle.module.url(forResource: "campus-v3", withExtension: "geojson"))
+        _ = try await engine.install(data: Data(contentsOf: fixture))
+        _ = try await engine.evaluate(location: location(10.001, lat: 20.002, at: 1100))
+        let stream = await engine.events()
+        let collector = Task { () -> [GeofenceEvent] in
+            var events: [GeofenceEvent] = []
+            for await event in stream {
+                if case .locationAvailabilityChanged = event { break }
+                events.append(event)
+            }
+            return events
+        }
+        let inside = try await engine.evaluate(location: location(10.003, lat: 20.002, at: 1101))
+        _ = try await engine.evaluate(location: location(10.003, lat: 20.002, at: 1102))
+        let garden = try #require(inside.first { $0.regionID.featureID == "garden" })
+        for (offset, longitude) in [10.00199, 10.00201, 10.00199].enumerated() {
+            let result = try await engine.evaluate(location: location(longitude, lat: 20.002, at: 1103 + Double(offset), accuracy: 10))
+            let uncertain = try #require(result.first { $0.regionID.featureID == "garden" })
+            #expect(uncertain.observation == .boundaryUncertain)
+            // Last confirmed timestamp comes from the repeated confirmable sample.
+            #expect(uncertain.lastConfirmed?.observedAt == Date(timeIntervalSince1970: 1102))
+            #expect(uncertain.lastConfirmed?.membership == garden.lastConfirmed?.membership)
+        }
+        try await engine.updateAvailability(LocationAvailability(reason: .servicesDisabled))
+        let events = await collector.value
+        #expect(events.count == 1)
+        if case .entered(let entry) = events.first { #expect(entry.regionID.featureID == "garden") }
+        else { Issue.record("Expected exactly one garden enter") }
+    }
+
+    @Test func holeAndSecondComponentQueryThroughStoreAndEngine() async throws {
+        let engine = try runtime(store: CoreDataSnapshotStore(inMemory: true))
+        let shell = [[10.0,20.0],[10.01,20],[10.01,20.01],[10,20.01],[10,20]]
+        let hole = [[10.002,20.002],[10.004,20.002],[10.004,20.004],[10.002,20.004],[10.002,20.002]]
+        let second = [[10.02,20.0],[10.03,20],[10.03,20.01],[10.02,20.01],[10.02,20]]
+        let data = try JSONSerialization.data(withJSONObject: ["type": "FeatureCollection", "geofenceSchema": 1,
+            "dataset": ["id": "parts", "revision": 1, "generatedAt": "2026-11-14T00:00:00Z"],
+            "features": [["type": "Feature", "id": "r", "properties": [:],
+                          "geometry": ["type": "MultiPolygon", "coordinates": [[shell, hole], [second]]]]]])
+        _ = try await engine.install(data: data)
+        let id = RegionID(datasetID: "parts", featureID: "r")
+        #expect(try await engine.query(coordinate: Coordinate(longitude: 10.003, latitude: 20.003), in: id).membership == .outside)
+        #expect(try await engine.query(coordinate: Coordinate(longitude: 10.002, latitude: 20.003), in: id).membership == .inside)
+        #expect(try await engine.query(coordinate: Coordinate(longitude: 10.025, latitude: 20.005), in: id).membership == .inside)
+    }
+
     func runtime(store: any SnapshotStore, restored: [ValidatedSnapshot] = []) throws -> GeofenceEngine {
         GeofenceEngine(configuration: try GeofenceConfiguration(maximumLocationAge: 1000), store: store,
                        source: UnusedSource(), decoder: { try GeoJSONDecoder.decode($0) },
@@ -25,6 +73,7 @@ actor StoreReadProbe: SnapshotStore {
         let store = StoreReadProbe(base), engine = try runtime(store: store)
         _ = try await engine.install(data: CapacityFixtureFactory.make(overlapping: false))
         let reads = await store.calls
+        let coreDataReads = base.readCountSnapshot
         for index in 0..<100 {
             let result = try await engine.evaluate(location: location(10 + Double(index)*0.05, at: 1100 + Double(index)))
             let inside = result.filter { $0.observation == .confirmed(.inside) }.map(\.regionID.featureID)
@@ -37,6 +86,7 @@ actor StoreReadProbe: SnapshotStore {
         let uncertain = try await engine.evaluate(location: location(10.01001, at: 1301, accuracy: 10))
         #expect(uncertain.first { $0.regionID.featureID == "region-000" }?.observation == .boundaryUncertain)
         #expect(await store.calls == reads)
+        #expect(base.readCountSnapshot == coreDataReads)
     }
     @Test func overlappingHundredRegionsCrossExactlyOnceEach() async throws {
         let base = try CoreDataSnapshotStore(inMemory: true)
@@ -52,6 +102,7 @@ actor StoreReadProbe: SnapshotStore {
             return events
         }
         let reads = await store.calls
+        let coreDataReads = base.readCountSnapshot
         _ = try await engine.evaluate(location: location(9, at: 1100))
         let inside = try await engine.evaluate(location: location(10, at: 1101))
         #expect(inside.filter { $0.observation == .confirmed(.inside) }.count == 100)
@@ -68,6 +119,7 @@ actor StoreReadProbe: SnapshotStore {
         #expect(enters.count == 100 && exits.count == 100)
         #expect(enters.values.allSatisfy { $0 == 1 } && exits.values.allSatisfy { $0 == 1 })
         #expect(await store.calls == reads)
+        #expect(base.readCountSnapshot == coreDataReads)
     }
     @Test func bundledFixturePersistsAndRejectsInvalidReplacement() async throws {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
