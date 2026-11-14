@@ -2,6 +2,10 @@
 
 A dataset is a complete GeoJSON snapshot with a stable ID and a monotonically increasing revision. It is separate from the SDK's own release version.
 
+## Create a snapshot visually
+
+Use [Fence Studio](editor.html) to draw and edit polygons, holes and MultiPolygon parts on OpenStreetMap. Add region metadata, import existing GeoJSON, then download a validated SheepFence snapshot. See the [editor guide](fence-editor.md) for supported limits and privacy details.
+
 ## Minimal snapshot
 
 Save this as `campus.geojson` and include it in your app bundle:

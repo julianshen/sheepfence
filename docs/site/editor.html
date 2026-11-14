@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Draw and edit geofence polygons on OpenStreetMap and export SDK-ready SheepFence GeoJSON.">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Fence Studio · SheepFence</title>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
+<link rel="stylesheet" href="assets/editor/editor.css">
+<script src="assets/vendor/leaflet/leaflet.js" defer></script>
+<script type="module" src="assets/editor/editor.mjs"></script>
+</head>
+<body>
+<a class="skip" href="#workspace">Skip to editor</a>
+<header class="studio-header">
+<a class="brand" href="index.html"><img src="assets/icon.svg" alt="" width="32" height="32">SheepFence <span>Fence Studio</span></a>
+<nav aria-label="Studio"><a href="fence-editor.html">Guide</a><a href="index.html">SDK docs ↗</a></nav>
+<div class="file-actions"><button id="import">Import GeoJSON</button><button id="export" class="primary">Download GeoJSON ↓</button></div>
+<input type="file" id="file" accept=".json,.geojson,application/json,application/geo+json" hidden>
+</header>
+<div class="workspace" id="workspace">
+<aside class="inspector" aria-label="Fence properties">
+<section class="intro"><span class="eyebrow">YOUR REGIONS, ON THE MAP</span><h1>Build a fence.</h1><p>Draw a boundary. Give it an identity.<br>Export a snapshot your app can use.</p></section>
+<section><div class="section-heading"><h2>Dataset</h2><button id="new" class="text-button">New</button></div>
+<form id="dataset-form"><label for="dataset-id">Dataset ID</label><input id="dataset-id" value="com.example.fences" required maxlength="200">
+<div class="two-column"><div><label for="revision">Revision</label><input id="revision" type="number" min="1" step="1" value="1" required></div><button type="button" id="bump">+ Revision</button></div>
+<button type="submit" class="subtle">Apply dataset</button><span class="unsaved" id="dataset-unsaved" hidden>Unapplied changes</span></form>
+<p class="hint" id="revision-hint">Increment the revision before installing an edited version of a published snapshot.</p></section>
+<section><div class="section-heading"><h2>Fences <span id="count" class="count">0</span></h2><button id="draw" class="primary">+ Draw fence</button></div>
+<div id="fence-list" class="fence-list" aria-label="Fences"></div><p id="empty" class="empty">No fences yet. Choose <strong>Draw fence</strong>, then click at least three points on the map.</p></section>
+<section id="feature-panel" hidden><div class="section-heading"><h2>Selected fence</h2><button id="delete" class="danger text-button">Delete</button></div>
+<form id="feature-form"><label for="feature-id">Feature ID</label><input id="feature-id" required maxlength="200">
+<label for="feature-name">Display name</label><input id="feature-name" maxlength="300">
+<div class="two-column"><div><label for="priority">Priority</label><input type="number" id="priority" step="1" required></div><label class="checkbox"><input type="checkbox" id="enabled"> Enabled</label></div>
+<button type="submit" class="subtle">Apply properties</button><span class="unsaved" id="feature-unsaved" hidden>Unapplied changes</span></form>
+<label for="ring">Boundary to edit</label><select id="ring"></select>
+<div class="row small-actions"><button id="hole">+ Hole</button><button id="part">+ Polygon part</button><button id="remove-ring" class="danger">Remove boundary</button></div>
+<p class="hint">Drag a vertex to move it. Select a vertex for precise coordinates. Click a small + handle to insert a vertex.</p>
+<div id="vertex-panel" hidden><form id="vertex-form"><h3 id="vertex-title">Vertex</h3><div class="two-column"><div><label for="vertex-lat">Latitude</label><input type="number" step="any" id="vertex-lat" min="-90" max="90" required></div><div><label for="vertex-lng">Longitude</label><input type="number" step="any" id="vertex-lng" min="-180" max="180" required></div></div><div class="row"><button type="submit">Move vertex</button><button type="button" id="remove-vertex" class="danger">Remove</button></div></form></div>
+</section>
+<section class="privacy"><strong>Local by design.</strong> Fence data stays in this browser. Drafts are saved on this device when storage is available. OSM receives requests for the map areas you view. <a href="fence-editor.html#privacy-and-map-tiles">Details</a></section>
+</aside>
+<main class="map-workspace" aria-label="Map editor">
+<div class="map-toolbar"><form id="go-form" class="go-form"><label for="go-coordinates" class="sr-only">Go to latitude, longitude</label><input id="go-coordinates" placeholder="Latitude, longitude" aria-label="Go to latitude, longitude"><button type="submit">Go</button></form><button id="locate">My location</button><button id="fit">Fit fences</button><div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button></div><button id="preview">Preview JSON</button></div>
+<div class="map-container"><div id="map" aria-label="OpenStreetMap. Use Draw fence and click points to create a boundary."></div>
+<div class="map-caption"><span class="status-dot"></span> OPENSTREETMAP <span>·</span> <span id="coordinates">25.03300, 121.56540</span></div>
+<div id="draw-panel" class="draw-panel" hidden><div><strong id="draw-title">Drawing fence</strong><p id="draw-instruction">Click the map to place vertices.</p></div><button id="undo-point">Undo point</button><button id="finish" class="primary">Finish boundary</button><button id="cancel-draw">Cancel</button></div>
+<div id="map-notice" class="map-notice" hidden>Map tiles are unavailable. You can still edit coordinates, import and export fences.</div>
+</div>
+<div class="statusbar"><span id="status" role="status" aria-live="polite">Ready. Draw a fence to begin.</span><span id="save-status">Local draft</span></div>
+<div class="map-footer"><span id="stats">0 fences · 0 vertices</span><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Report a map issue ↗</a></div>
+</main>
+</div>
+<dialog id="preview-dialog"><div class="section-heading"><h2>Snapshot preview</h2><button id="close-preview" aria-label="Close preview">Close</button></div><p>This is the exact snapshot format used for download. Keep the revision unchanged only when the source bytes are identical.</p><textarea id="json-preview" readonly aria-label="GeoJSON snapshot preview" spellcheck="false"></textarea><div class="row"><button id="copy">Copy JSON</button><button id="download-preview" class="primary">Download</button></div></dialog>
+<noscript><p class="noscript">JavaScript is required for Fence Studio. The <a href="datasets.html">dataset guide</a> includes a GeoJSON example you can edit manually.</p></noscript>
+</body></html>

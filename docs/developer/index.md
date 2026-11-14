@@ -4,6 +4,10 @@ SheepFence is a Swift SDK for foreground polygon geofencing. Bring your own GeoJ
 
 **Swift 6 · iOS 16+ · Swift Package Manager · No SDK dependencies**
 
+## Create your fence data
+
+[Open Fence Studio](editor.html) to draw polygon regions on OpenStreetMap, edit their vertices and export a SheepFence GeoJSON snapshot. No account or API key required.
+
 ## Start building
 
 - [Quick start](quick-start.md) — install the package and evaluate your first location.

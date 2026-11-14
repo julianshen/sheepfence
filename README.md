@@ -6,6 +6,10 @@ offline snapshots, accuracy-aware observations and confirmed entry/exit events.
 
 [Developer documentation](https://julianshen.github.io/sheepfence/) · [Quick start](docs/developer/quick-start.md) · [API guide](docs/developer/api.md)
 
+## Create fence polygons
+
+[Open Fence Studio](https://julianshen.github.io/sheepfence/editor.html) to draw and edit polygons on OpenStreetMap and export SDK-ready GeoJSON. Includes holes, MultiPolygon parts, import, local drafts and undo/redo. [Editor guide](docs/developer/fence-editor.md).
+
 ## Install
 
 Add `https://github.com/julianshen/sheepfence` in Xcode's package dependencies and

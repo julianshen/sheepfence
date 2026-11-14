@@ -2,9 +2,9 @@ name: Developer documentation
 on:
   push:
     branches: [main]
-    paths: ['docs/developer/**', 'docs/site/**', 'scripts/build_docs.py', '.github/workflows/pages.yml']
+    paths: ['docs/developer/**', 'docs/site/**', 'scripts/build_docs.py', 'scripts/tests/**', '.github/workflows/pages.yml']
   pull_request:
-    paths: ['docs/developer/**', 'docs/site/**', 'scripts/build_docs.py', '.github/workflows/pages.yml']
+    paths: ['docs/developer/**', 'docs/site/**', 'scripts/build_docs.py', 'scripts/tests/**', '.github/workflows/pages.yml']
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,10 @@ jobs:
           cache: pip
           cache-dependency-path: docs/site/requirements.txt
       - run: pip install -r docs/site/requirements.txt
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: node --test scripts/tests/editor-model.test.mjs
       - run: python scripts/build_docs.py
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

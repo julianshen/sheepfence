@@ -17,6 +17,7 @@ PAGES = [
     ("quick-start", "Quick start", "Install SheepFence and evaluate your first location."),
     ("queries", "Queries & distance", "Find matching regions and measure boundary distance."),
     ("monitoring", "Monitoring & GPS", "Manage location sources, events and GPS availability."),
+    ("fence-editor", "Fence Studio", "Draw and edit SDK-ready GeoJSON on OpenStreetMap."),
     ("datasets", "Datasets", "Author and update transactional GeoJSON snapshots."),
     ("api", "API guide", "Choose the right SheepFence API and configuration."),
     ("troubleshooting", "Troubleshooting", "Diagnose location, import and subscription failures."),
@@ -89,6 +90,7 @@ def main():
             page_class="overview" if slug == "index" else "guide",
         )
         (OUTPUT / f"{slug}.html").write_text(html)
+    shutil.copyfile(ROOT / "docs/site/editor.html", OUTPUT / "editor.html")
     (OUTPUT / ".nojekyll").touch()
     inventories = {}
     for path in OUTPUT.glob("*.html"):
@@ -108,7 +110,7 @@ def main():
                 errors.append(f"{page.name}: missing anchor {href}")
     if errors:
         raise SystemExit("\n".join(errors))
-    print(f"Built {len(PAGES)} pages; all local links and anchors valid: {OUTPUT}")
+    print(f"Built {len(PAGES)} guides + Fence Studio; all local links and anchors valid: {OUTPUT}")
 
 
 if __name__ == "__main__":
