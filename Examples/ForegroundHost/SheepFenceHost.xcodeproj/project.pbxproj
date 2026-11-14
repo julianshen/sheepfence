@@ -1,0 +1,373 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		6944BA12D1CC83A1C5055AEC /* CapacityFixtureFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF7CB81CE22875361D1902E3 /* CapacityFixtureFactory.swift */; };
+		72576CB7436AC93108045FEF /* SheepFence in Frameworks */ = {isa = PBXBuildFile; productRef = CF418BF3D1D0AE5D66F2501D /* SheepFence */; };
+		762E02C7A937ECC1DB9C3683 /* SheepFenceHostApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3311127CB10F57DDA0291F30 /* SheepFenceHostApp.swift */; };
+		ACCC44DB13B858E0B877308A /* campus-v3.geojson in Resources */ = {isa = PBXBuildFile; fileRef = 9B2D8FC38E14A4ECEE1A0FDC /* campus-v3.geojson */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		29538799966131962BD8A933 /* sheepfence */ = {isa = PBXFileReference; lastKnownFileType = folder; name = sheepfence; path = ../..; sourceTree = SOURCE_ROOT; };
+		3311127CB10F57DDA0291F30 /* SheepFenceHostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepFenceHostApp.swift; sourceTree = "<group>"; };
+		4EFBFA85F40D8072B3705692 /* SheepFenceHost.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = SheepFenceHost.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9B2D8FC38E14A4ECEE1A0FDC /* campus-v3.geojson */ = {isa = PBXFileReference; path = "campus-v3.geojson"; sourceTree = "<group>"; };
+		AF7CB81CE22875361D1902E3 /* CapacityFixtureFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapacityFixtureFactory.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		3E4CCCCDA9DEDB1F656E1AAB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				72576CB7436AC93108045FEF /* SheepFence in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2DB48F47A26783702A78868C = {
+			isa = PBXGroup;
+			children = (
+				5C84AD86C0CE2DC87627C4F8 /* Fixtures */,
+				69D9703386DD7E1DC3CA831F /* Packages */,
+				5E39842816DBF2CCDB51D0B3 /* Sources */,
+				DA1FA8C9283EACC860F217DD /* Support */,
+				A412AA1AA5E1D1F653883BE7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		5C84AD86C0CE2DC87627C4F8 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				9B2D8FC38E14A4ECEE1A0FDC /* campus-v3.geojson */,
+			);
+			name = Fixtures;
+			path = ../../Tests/SheepFenceTests/Fixtures;
+			sourceTree = "<group>";
+		};
+		5E39842816DBF2CCDB51D0B3 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				3311127CB10F57DDA0291F30 /* SheepFenceHostApp.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		69D9703386DD7E1DC3CA831F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				29538799966131962BD8A933 /* sheepfence */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		A412AA1AA5E1D1F653883BE7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				4EFBFA85F40D8072B3705692 /* SheepFenceHost.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DA1FA8C9283EACC860F217DD /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				AF7CB81CE22875361D1902E3 /* CapacityFixtureFactory.swift */,
+			);
+			name = Support;
+			path = ../../Tests/SheepFenceTests/Support;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		12E672175F59007701C7C814 /* SheepFenceHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E038D9BF1A9EAA64ED534E0 /* Build configuration list for PBXNativeTarget "SheepFenceHost" */;
+			buildPhases = (
+				69B6EB0A3A420BEBEC9D7AAA /* Sources */,
+				0F7B2800C5C30C18A039ECC0 /* Resources */,
+				3E4CCCCDA9DEDB1F656E1AAB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SheepFenceHost;
+			packageProductDependencies = (
+				CF418BF3D1D0AE5D66F2501D /* SheepFence */,
+			);
+			productName = SheepFenceHost;
+			productReference = 4EFBFA85F40D8072B3705692 /* SheepFenceHost.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		555E8DF0D24F590E0B85EEB9 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					12E672175F59007701C7C814 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 35BA5AE0182A27A114BC6BC2 /* Build configuration list for PBXProject "SheepFenceHost" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 2DB48F47A26783702A78868C;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4F4EEC130FE37F609A4315B0 /* XCLocalSwiftPackageReference "../.." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A412AA1AA5E1D1F653883BE7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				12E672175F59007701C7C814 /* SheepFenceHost */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0F7B2800C5C30C18A039ECC0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ACCC44DB13B858E0B877308A /* campus-v3.geojson in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		69B6EB0A3A420BEBEC9D7AAA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6944BA12D1CC83A1C5055AEC /* CapacityFixtureFactory.swift in Sources */,
+				762E02C7A937ECC1DB9C3683 /* SheepFenceHostApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		44D4E23AA073514532D24D99 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "SheepFence Lab";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Test foreground geofence availability and movement on this device.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.julianshen.SheepFenceHost;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		61BDE16EE7F75F35BDFED3A1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "SheepFence Lab";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Test foreground geofence availability and movement on this device.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.julianshen.SheepFenceHost;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7806C1FEC460AE47F30BCA56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		FA7CFD5309F5A9C03B1818F7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		35BA5AE0182A27A114BC6BC2 /* Build configuration list for PBXProject "SheepFenceHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA7CFD5309F5A9C03B1818F7 /* Debug */,
+				7806C1FEC460AE47F30BCA56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		7E038D9BF1A9EAA64ED534E0 /* Build configuration list for PBXNativeTarget "SheepFenceHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				44D4E23AA073514532D24D99 /* Debug */,
+				61BDE16EE7F75F35BDFED3A1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		4F4EEC130FE37F609A4315B0 /* XCLocalSwiftPackageReference "../.." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../..;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CF418BF3D1D0AE5D66F2501D /* SheepFence */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SheepFence;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 555E8DF0D24F590E0B85EEB9 /* Project object */;
+}

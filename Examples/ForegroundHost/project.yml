@@ -1,0 +1,36 @@
+name: SheepFenceHost
+options:
+  deploymentTarget:
+    iOS: "16.0"
+packages:
+  SheepFence:
+    path: ../..
+targets:
+  SheepFenceHost:
+    type: application
+    platform: iOS
+    sources:
+      - Sources
+      - path: ../../Tests/SheepFenceTests/Support/CapacityFixtureFactory.swift
+      - path: ../../Tests/SheepFenceTests/Fixtures/campus-v3.geojson
+        buildPhase: resources
+    dependencies:
+      - package: SheepFence
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.julianshen.SheepFenceHost
+        CODE_SIGN_STYLE: Automatic
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: SheepFence Lab
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: Test foreground geofence availability and movement on this device.
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortraitUpsideDown
+        TARGETED_DEVICE_FAMILY: "1,2"
+schemes:
+  SheepFenceHost:
+    build:
+      targets:
+        SheepFenceHost: all
+    run:
+      config: Release

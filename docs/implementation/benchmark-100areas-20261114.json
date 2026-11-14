@@ -1,0 +1,44 @@
+{
+  "platform": "iOS Simulator",
+  "device": "iPhone 17 Pro",
+  "os": "26.1",
+  "xcode": "26.1.1 (17B100)",
+  "configuration": "Release -O, ENABLE_TESTABILITY=YES, code coverage disabled",
+  "sourceCheckpoint": "b57f781 plus CapacityBenchmarkTests",
+  "results": [
+    {
+      "areas": 100,
+      "bufferMeters": 0,
+      "datasetSHA256": "a906fd5dd95b124895fb2de406e263e0ce00fa4e1306225a8c6b086e4455aba3",
+      "edgesPerArea": 100,
+      "horizontalAccuracyMeters": 1,
+      "layout": "separated",
+      "max_ms": 0.104583,
+      "mean_ms": 0.043931765,
+      "p50_ms": 0.043417,
+      "p95_ms": 0.046875,
+      "p99_ms": 0.052458,
+      "revision": 1,
+      "samples": 2000,
+      "storeOperationsDuringQueries": 0,
+      "warmup": 200
+    },
+    {
+      "areas": 100,
+      "bufferMeters": 0,
+      "datasetSHA256": "9a2b06ff644d03e05b22497d22ed0291c820923217ee51c93487e2df342cd51c",
+      "edgesPerArea": 100,
+      "horizontalAccuracyMeters": 1,
+      "layout": "overlapping",
+      "max_ms": 0.164625,
+      "mean_ms": 0.11446036800000041,
+      "p50_ms": 0.114709,
+      "p95_ms": 0.118625,
+      "p99_ms": 0.12575,
+      "revision": 1,
+      "samples": 2000,
+      "storeOperationsDuringQueries": 0,
+      "warmup": 200
+    }
+  ]
+}

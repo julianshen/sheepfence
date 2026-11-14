@@ -13,8 +13,8 @@ facade. Tests exercise real import/store/engine paths for both 100-region worklo
 
 The public construction path restores SQLite snapshots and connects the local/HTTPS
 source, Core Location provider, and adaptive sampling. Source/provider cross-review
-and regression fixes are complete for this checkpoint (86 package tests pass). Device lifecycle checks and field/performance
-acceptance remain pending; this is not a release-ready SDK.
+and regression fixes are complete for this checkpoint (86 package tests pass). A [physical iPhone benchmark](docs/implementation/benchmark-iphone-20261114.md)
+passed both 100-area workloads. Device lifecycle checks and field acceptance remain pending; this is not a release-ready SDK.
 See [implementation progress](docs/implementation/progress.md).
 
 Distance evaluation uses an approximate local meter model, currently limited to
