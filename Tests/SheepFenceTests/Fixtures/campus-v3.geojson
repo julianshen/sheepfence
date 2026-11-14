@@ -1,0 +1,29 @@
+{
+  "type": "FeatureCollection",
+  "geofenceSchema": 1,
+  "dataset": {
+    "id": "com.example.campus",
+    "revision": 3,
+    "generatedAt": "2026-11-12T00:00:00Z"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "campus",
+      "properties": { "name": "園區", "enabled": true, "priority": 0 },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10.000,20.000],[10.006,20.000],[10.006,20.004],[10.000,20.004],[10.000,20.000]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "garden",
+      "properties": { "name": "花園", "priority": 10 },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[10.002,20.001],[10.004,20.001],[10.004,20.003],[10.002,20.003],[10.002,20.001]]]
+      }
+    }
+  ]
+}
