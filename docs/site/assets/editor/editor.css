@@ -5,3 +5,5 @@
 html:lang(ja) .map-toolbar,html:lang(zh-Hant) .map-toolbar{flex-wrap:wrap}html:lang(ja) .statusbar,html:lang(zh-Hant) .statusbar{min-height:48px;height:auto;flex-wrap:wrap}html:lang(ja) .small-actions,html:lang(zh-Hant) .small-actions{flex-wrap:wrap}
 
 .fence-row{display:flex;align-items:center;gap:9px}.fence-row .union-check{width:18px;height:18px;flex:0 0 18px;accent-color:#916d21}.fence-row .fence-item{flex:1;min-width:0}.union-tools{padding:0 0 12px}.union-tools .row{flex-wrap:wrap;margin-top:10px}.union-tools .hint{margin:6px 0}.union-tools select{width:100%}
+
+.road-tools{border-top:1px solid #d8e1d7;border-bottom:1px solid #d8e1d7;margin:16px 0;padding:12px 0}.road-tools h3{margin:0 0 8px}.road-tools .row{flex-wrap:wrap;margin:10px 0}.road-tools input{width:100%}#road-summary{font-size:12px;line-height:1.6}#road-review{padding:10px;border:1px solid #dba366;border-radius:6px;background:#fff8e9}

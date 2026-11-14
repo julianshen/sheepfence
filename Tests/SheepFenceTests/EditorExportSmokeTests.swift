@@ -38,4 +38,17 @@ import Testing
         #expect(region.geometry.polygons[0].rings.count == 2)
     }
 
+    @Test func roadExpansionExportImportsAndPreservesHole() throws {
+        // Browser preview applied against a deterministic OSM-shaped road fixture.
+        let url = try #require(Bundle.module.url(forResource: "road-export", withExtension: "geojson"))
+        let snapshot = try GeoJSONDecoder.decode(Data(contentsOf: url))
+        #expect(snapshot.metadata.revision == 1)
+        #expect(snapshot.regions.count == 1)
+        let region = try #require(snapshot.regions.first)
+        #expect(region.id.featureID == "fence")
+        #expect(region.name == "Road test")
+        #expect(region.geometry.polygons.count == 1)
+        #expect(region.geometry.polygons[0].rings.count == 2)
+    }
+
 }

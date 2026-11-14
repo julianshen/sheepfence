@@ -1,5 +1,5 @@
 import * as bundled from '../vendor/polygon-clipping/polygon-clipping.umd.js';
-import {clone,validateSnapshot} from './model.mjs?v=union-1';
+import {clone,validateSnapshot} from './model.mjs?v=roads-1';
 // The unchanged upstream UMD bundle exposes CommonJS in Node and a global in browsers/workers.
 const clipping=bundled.default ?? globalThis.polygonClipping;
 

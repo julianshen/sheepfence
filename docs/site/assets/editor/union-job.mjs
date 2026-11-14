@@ -2,7 +2,7 @@
 export function runUnion(snapshot,ids,propertiesFrom,signal){
   return new Promise((resolve,reject)=>{
     if(signal.aborted){reject(new DOMException('Cancelled','AbortError'));return;}
-    const worker=new Worker(new URL('./union-worker.mjs?v=union-1',import.meta.url),{type:'module'});
+    const worker=new Worker(new URL('./union-worker.mjs?v=roads-1',import.meta.url),{type:'module'});
     let timer;
     const finish=(error,result)=>{clearTimeout(timer);signal.removeEventListener('abort',abort);worker.terminate();error?reject(error):resolve(result);};
     const abort=()=>finish(new DOMException('Cancelled','AbortError'));

@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="assets/editor/editor.css">
 <script src="assets/vendor/leaflet/leaflet.js" defer></script>
-<script type="module" src="assets/editor/editor.mjs?v=union-1"></script>
+<script type="module" src="assets/editor/editor.mjs?v=roads-1"></script>
 </head>
 <body>
 <a class="skip" href="#workspace">Skip to editor</a>
@@ -35,12 +35,13 @@
 <label for="feature-name">Display name</label><input id="feature-name" maxlength="300">
 <div class="two-column"><div><label for="priority">Priority</label><input type="number" id="priority" step="1" required></div><label class="checkbox"><input type="checkbox" id="enabled"> Enabled</label></div>
 <button type="submit" class="subtle">Apply properties</button><span class="unsaved" id="feature-unsaved" hidden>Unapplied changes</span></form>
+<div class="road-tools"><h3>Expand to roads</h3><p class="hint">Expand to surrounding road centerlines. Preview before applying; existing holes stay excluded.</p><label for="road-limit">Maximum expansion (meters)</label><input id="road-limit" type="number" min="25" max="1000" step="25" value="150"><div class="row"><button id="expand-roads">Preview road expansion</button><button id="cancel-roads" hidden>Cancel road expansion</button></div><div id="road-review" hidden><p id="road-summary" role="status"></p><p class="hint">Orange is the proposed boundary; green is the current fence. Review the map before applying.</p><button id="apply-roads" class="primary">Apply road expansion</button></div><p class="hint">Sends this fence’s search bounds to the road lookup service.</p></div>
 <label for="ring">Boundary to edit</label><select id="ring"></select>
 <div class="row small-actions"><button id="hole">+ Hole</button><button id="part">+ Polygon part</button><button id="remove-ring" class="danger">Remove boundary</button></div>
 <p class="hint">Drag a vertex to move it. Select a vertex for precise coordinates. Click a small + handle to insert a vertex.</p>
 <div id="vertex-panel" hidden><form id="vertex-form"><h3 id="vertex-title">Vertex</h3><div class="two-column"><div><label for="vertex-lat">Latitude</label><input type="number" step="any" id="vertex-lat" min="-90" max="90" required></div><div><label for="vertex-lng">Longitude</label><input type="number" step="any" id="vertex-lng" min="-180" max="180" required></div></div><div class="row"><button type="submit">Move vertex</button><button type="button" id="remove-vertex" class="danger">Remove</button></div></form></div>
 </section>
-<section class="privacy"><strong>Local by design.</strong> Fence data stays in this browser. Drafts are saved on this device when storage is available. OSM receives map tile requests. Quick add sends the clicked coordinate to the boundary lookup service. <a href="fence-editor.html#privacy-and-map-tiles">Details</a></section>
+<section class="privacy"><strong>Local by design.</strong> Fence data stays in this browser. Drafts are saved on this device when storage is available. OSM receives map tile requests. Quick add sends the clicked coordinate to the boundary lookup service. Road expansion sends the selected fence’s search bounds. <a href="fence-editor.html#privacy-and-map-tiles">Details</a></section>
 </aside>
 <main class="map-workspace" aria-label="Map editor">
 <div class="map-toolbar"><form id="go-form" class="go-form"><label for="go-coordinates" class="sr-only">Go to latitude, longitude</label><input id="go-coordinates" placeholder="Latitude, longitude" aria-label="Go to latitude, longitude"><button type="submit">Go</button></form><button id="locate">My location</button><button id="fit">Fit fences</button><button id="quick-add" title="Add the mapped place at the center of the map">Add place at center</button><button id="cancel-lookup" hidden>Cancel lookup</button><div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button></div><button id="preview">Preview JSON</button></div>

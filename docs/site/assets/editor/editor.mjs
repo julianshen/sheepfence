@@ -1,11 +1,15 @@
-import {runUnion} from './union-job.mjs?v=union-1';
-import {t} from './i18n.mjs?v=union-1';
-import {clone,freshSnapshot,closeRing,polygons,validateSnapshot,readImport,serialize,MAX_BYTES} from './model.mjs?v=union-1';
-import {PlaceLookup} from './places.mjs?v=union-1';
+import {roadSearch} from './roads.mjs?v=roads-1';
+import {RoadLookup} from './road-source.mjs?v=roads-1';
+import {runRoadExpansion} from './road-job.mjs?v=roads-1';
+import {runUnion} from './union-job.mjs?v=roads-1';
+import {t} from './i18n.mjs?v=roads-1';
+import {clone,freshSnapshot,closeRing,polygons,validateSnapshot,readImport,serialize,MAX_BYTES} from './model.mjs?v=roads-1';
+import {PlaceLookup} from './places.mjs?v=roads-1';
 const $=id=>document.getElementById(id);
 const STORAGE='sheepfence-studio-v1';
 let snapshot=freshSnapshot(), selected=-1, part=0, ringIndex=0, vertex=-1;
 let activeLookup=null, placeService=null, editGeneration=0, selectionTimer=null;
+let roadService=null, activeRoad=null, roadPreview=null;
 let unionChecked=new Set(), activeUnion=null;
 let drawing=null, past=[], future=[], datasetDirty=false, featureDirty=false;
 const message=(text,error=false)=>{$('status').textContent=text;$('status').classList.toggle('error',error);};
@@ -26,7 +30,7 @@ const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
   maxZoom:19,noWrap:true,updateWhenIdle:true,keepBuffer:1
 }).addTo(map);
 tiles.on('tileerror',()=>{$('map-notice').hidden=false;});
-const shapes=L.featureGroup().addTo(map),handles=L.layerGroup().addTo(map),draftLayers=L.layerGroup().addTo(map);
+const shapes=L.featureGroup().addTo(map),handles=L.layerGroup().addTo(map),draftLayers=L.layerGroup().addTo(map),roadLayers=L.layerGroup().addTo(map);
 const feature=()=>snapshot.features[selected];
 const currentRing=()=>feature()?polygons(feature())[part]?.[ringIndex]:null;
 const latlng=point=>[point[1],point[0]];
@@ -87,7 +91,7 @@ function render(){
   $('undo').disabled=!past.length||!!drawing;$('redo').disabled=!future.length||!!drawing;
   for(const id of ['quick-add','draw','hole','part','delete','new','import','export','preview','ring'])$(id).disabled=!!drawing;
   const stats=validateSnapshot(snapshot);$('stats').textContent=t`${stats.regions} fences · ${stats.vertices.toLocaleString()} vertices`;
-  renderUnion();renderMap();renderVertex();renderDraft();
+  renderUnion();renderRoadControls();renderMap();renderVertex();renderDraft();
 }
 function renderUnion(){
   const selector=$('union-properties'),previous=selector.value;
@@ -118,7 +122,52 @@ $('union').onclick=async()=>{
     if(activeUnion===operation)message(t('Union could not be completed within the editor limits. Try fewer or simpler fences. Existing fences are unchanged.'),true);
   }finally{if(activeUnion===operation)activeUnion=null;renderUnion();}
 };
-function selectFence(index){if(!ready())return;selected=index;part=0;ringIndex=0;vertex=-1;render();message(t('Drag vertices to edit. Changes are checked before they are saved.'));}
+function renderRoadControls(){
+  $('expand-roads').disabled=!!drawing||!!activeRoad||!feature();
+  $('road-limit').disabled=!!drawing||!!activeRoad;
+  $('cancel-roads').hidden=!activeRoad&&!roadPreview;
+  $('road-review').hidden=!roadPreview;
+}
+function roadError(code){
+  if(code==='roadTooFar')return t('Surrounding roads exceed the expansion limit. Increase the limit or edit the fence manually.');
+  if(code==='roadUnchanged')return t('This fence already follows the available road boundary. No changes made.');
+  if(code==='roadRange'||code==='roadLimit')return t('Use 25–1,000 meters and a fence no wider or taller than 2 km, within latitude ±80° and away from the antimeridian.');
+  if(code==='roadBusy')return t('Road lookup is busy. Wait a moment before trying again.');
+  if(code==='roadTimeout'||code==='roadNetwork')return t('Road lookup is unavailable or timed out. Try again later. Existing fences are unchanged.');
+  if(code==='roadComplexity')return t('This road network or fence is too complex. Try a smaller fence or expansion limit.');
+  return t('No reliable enclosing road boundary was found. Roads may be incomplete, disconnected or cross without a mapped junction. Existing fences are unchanged.');
+}
+$('road-limit').oninput=()=>invalidateLookup();
+$('cancel-roads').onclick=()=>{invalidateLookup();message(t('Road expansion cancelled. Existing fences are unchanged.'));};
+$('expand-roads').onclick=async()=>{
+  if(!ready()||!feature()||activeRoad)return;
+  const limit=Number($('road-limit').value);let search;
+  try{search=roadSearch(feature().geometry,limit);}catch(error){message(roadError(error.message),true);return;}
+  invalidateLookup();unionChecked.clear();renderUnion();renderMap();const operation={controller:new AbortController(),generation:editGeneration,index:selected};activeRoad=operation;renderRoadControls();
+  message(t('Finding surrounding road centerlines…'));
+  const timeout=setTimeout(()=>operation.controller.abort(),45000);
+  try{
+    if(!roadService){
+      const response=await fetch(new URL('./places-config.json',import.meta.url),{signal:operation.controller.signal});
+      if(!response.ok)throw new Error('roadNetwork');roadService=new RoadLookup(await response.json());
+    }
+    const roads=await roadService.lookup(search,operation.controller.signal);
+    const result=await runRoadExpansion(snapshot,operation.index,roads,limit,operation.controller.signal);
+    if(activeRoad!==operation||operation.generation!==editGeneration||selected!==operation.index)return;
+    roadPreview={...result,generation:editGeneration};activeRoad=null;
+    const layer=L.geoJSON(result.snapshot.features[result.index],{interactive:false,style:{color:'#c06b16',weight:4,dashArray:'8 5',fillColor:'#e9ad49',fillOpacity:0.15}}).addTo(roadLayers);
+    map.fitBounds(layer.getBounds(),{padding:[45,45],maxZoom:18});
+    $('road-summary').textContent=t`Preview adds approximately ${result.addedSquareMeters.toLocaleString()} m² using ${result.roadCount} mapped road ways.`;
+    message(t('Road expansion is only a preview. Choose Apply road expansion to save it, or Cancel.'));
+  }catch(error){if(activeRoad===operation)message(roadError(error.name==='AbortError'?'roadTimeout':error.message),true);}
+  finally{clearTimeout(timeout);if(activeRoad===operation)activeRoad=null;renderRoadControls();}
+};
+$('apply-roads').onclick=()=>{
+  if(!ready()||!roadPreview||roadPreview.generation!==editGeneration||roadPreview.index!==selected)return;
+  const result=roadPreview;part=0;ringIndex=0;
+  commit(result.snapshot,t('Road expansion saved. Undo restores the original boundary. Increment the revision before publishing.'),{select:result.index});
+};
+function selectFence(index){if(!ready())return;if(index!==selected)invalidateLookup();selected=index;part=0;ringIndex=0;vertex=-1;render();message(t('Drag vertices to edit. Changes are checked before they are saved.'));}
 function renderMap(){
   shapes.clearLayers();handles.clearLayers();
   snapshot.features.forEach((f,i)=>{
@@ -181,6 +230,8 @@ map.on('click',e=>{
 
 function invalidateLookup(){
   editGeneration++;
+  if(activeRoad){activeRoad.controller.abort();activeRoad=null;}
+  roadPreview=null;roadLayers.clearLayers();renderRoadControls();
   if(activeUnion){activeUnion.controller.abort();activeUnion=null;renderUnion();}
   if(activeLookup){activeLookup.controller.abort();activeLookup=null;}
   $('cancel-lookup').hidden=true;$('quick-add').disabled=!!drawing;
@@ -198,6 +249,7 @@ async function quickAdd(ll){
   clearTimeout(selectionTimer);
   if(!ready())return;
   if(map.getZoom()<15){message(t('Zoom in to a building or place before double-clicking to add its boundary.'),true);return;}
+  if(activeRoad||roadPreview)invalidateLookup();
   if(activeLookup){message(t('A place lookup is running. Cancel it before choosing another place.'));return;}
   if(snapshot.features.length>=100){message(t('This snapshot already has 100 fences.'),true);return;}
   const operation={controller:new AbortController(),generation:editGeneration};activeLookup=operation;
@@ -337,12 +389,13 @@ $('copy').onclick=async()=>{
   catch{$('json-preview').focus();$('json-preview').select();message(t('Clipboard unavailable. Select and copy the preview manually.'),true);}
 };
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&(activeRoad||roadPreview)){$('cancel-roads').click();return;}
   if(e.key==='Escape'&&activeUnion){$('cancel-union').click();return;}
   if(e.key==='Escape'&&activeLookup){cancelLookup();return;}
   if(e.key==='Escape'&&drawing){$('cancel-draw').click();return;}
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$(e.shiftKey?'redo':'undo').click();}
 });
-window.addEventListener('beforeunload',e=>{if(drawing||datasetDirty||featureDirty){e.preventDefault();e.returnValue='';}});
+window.addEventListener('beforeunload',e=>{if(drawing||datasetDirty||featureDirty||roadPreview){e.preventDefault();e.returnValue='';}});
 new ResizeObserver(()=>map.invalidateSize()).observe($('map'));
 render();if(snapshot.features.length)fit();message(restoreMessage);

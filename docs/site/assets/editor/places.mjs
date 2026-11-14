@@ -1,5 +1,5 @@
-import {t} from './i18n.mjs?v=union-1';
-import {clone,classify,validateGeometry,MAX_BYTES} from './model.mjs?v=union-1';
+import {t} from './i18n.mjs?v=roads-1';
+import {clone,classify,validateGeometry,MAX_BYTES} from './model.mjs?v=roads-1';
 
 const same=(a,b)=>a[0]===b[0]&&a[1]===b[1];
 function positions(geometry) {
@@ -86,7 +86,7 @@ export function boundaryQuery(lat,lon){
   if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180)throw new Error(t('Choose a valid map location.'));
   return `[out:json][timeout:15][maxsize:8388608];is_in(${lat.toFixed(6)},${lon.toFixed(6)})->.areas;(way(pivot.areas)[name][!boundary][!indoor][!room];rel(pivot.areas)[name][type=multipolygon][!indoor][!room];way(pivot.areas)[building][!indoor][!room];rel(pivot.areas)[building][!indoor][!room];);out geom;`;
 }
-async function limitedJSON(response){
+export async function limitedJSON(response){
   if(Number(response.headers.get('content-length'))>MAX_BYTES){
     await response.body?.cancel();
     throw new Error(t('Boundary response exceeds 5 MB. Draw a smaller fence manually.'));
