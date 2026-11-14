@@ -49,3 +49,9 @@ The archive is generated under `.build/documentation/Build/Products/Debug-iphone
 Keep public API behavior and examples aligned. Add focused regression coverage for behavior changes, especially snapshot transactions, availability recovery and stream cancellation. Include a minimal reproduction with bug reports. Existing acceptance records describe a particular checkpoint; update evidence only after actually running the corresponding checks.
 
 This is pre-release software. Version tags, licensing and field acceptance are separate release decisions.
+
+## Translations
+
+English guides remain at the root; Traditional Chinese (`zh-Hant`) and Japanese (`ja`) guides live in matching subdirectories. Keep all three versions aligned when behavior changes. Preserve API identifiers and executable code samples. The language switcher links to the equivalent page, and Fence Studio shares the same local draft across languages.
+
+Editor and site chrome messages live in `docs/site/assets/editor/messages.json`. Use exact message keys or tagged `t` templates with numbered placeholders; never translate user data, IDs or exported GeoJSON keys. Run `node --test scripts/tests/editor-*.test.mjs` and rebuild all 30 pages. Check translated pages and the editor on desktop and mobile before publishing.

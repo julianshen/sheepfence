@@ -6,6 +6,8 @@ offline snapshots, accuracy-aware observations and confirmed entry/exit events.
 
 [Developer documentation](https://julianshen.github.io/sheepfence/) · [Quick start](docs/developer/quick-start.md) · [API guide](docs/developer/api.md)
 
+[繁體中文文件](https://julianshen.github.io/sheepfence/zh-Hant/) · [日本語ドキュメント](https://julianshen.github.io/sheepfence/ja/)
+
 ## Create fence polygons
 
 [Open Fence Studio](https://julianshen.github.io/sheepfence/editor.html) to double-click mapped places for their boundaries, draw and edit polygons on OpenStreetMap, and export SDK-ready GeoJSON. Includes holes, MultiPolygon parts, import, local drafts and undo/redo. [Editor guide](docs/developer/fence-editor.md).
