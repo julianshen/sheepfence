@@ -1,25 +1,41 @@
 import CoreLocation
 import Foundation
 
+public struct DatasetChange: Equatable, Sendable {
+    public let dataset: DatasetMetadata
+    public let affectedRegionIDs: [RegionID]
+    public let removedRegionIDs: [RegionID]
+    /// Empty when no current sample exists. affectedRegionIDs still identifies unconfirmed regions.
+    public let evaluations: [RegionEvaluation]
+}
 public enum GeofenceEvent: Equatable, Sendable {
-    /// First or resumed confirmed state; never an inferred crossing.
     case baseline(RegionEvaluation)
     case entered(RegionEvaluation)
     case exited(RegionEvaluation)
-    case datasetChanged(DatasetMetadata)
-    case locationAvailabilityChanged(LocationUnavailableReason?)
+    case datasetChanged(DatasetChange)
+    case locationAvailabilityChanged(LocationAvailability)
 }
 
-/// Proposed integration surface from spec 0.3. A concrete engine is not yet implemented.
-/// The host owns permission prompts and calls stopMonitoring on leaving the foreground.
-@MainActor
-public protocol GeofenceClient: AnyObject {
-    var events: AsyncStream<GeofenceEvent> { get }
-
-    /// Accepts local/bundle file URLs or HTTPS URLs; each file is a complete snapshot.
+/// Every subscriber gets an independent, ordered, unbounded stream. Cancel when no longer needed.
+/// Queries run on the engine actor; the host owns foreground lifecycle and permission prompts.
+public protocol GeofenceClient: Sendable {
+    func events() async -> AsyncStream<GeofenceEvent>
     func installSnapshot(from source: URL) async throws -> InstallResult
-    func contains(coordinate: CLLocationCoordinate2D, in region: RegionID) throws -> Bool
-    func evaluate(location: CLLocation) throws -> [RegionEvaluation]
-    func startMonitoring()
-    func stopMonitoring()
+    func query(coordinate: Coordinate, in region: RegionID) async throws -> GeometryQueryResult
+    func evaluate(location: LocationSample) async throws -> [RegionEvaluation]
+    func startMonitoring(mode: LocationSourceMode) async throws
+    func stopMonitoring() async
+    func updateAvailability(_ availability: LocationAvailability) async throws
+}
+public extension GeofenceClient {
+    /// Convenience without revision metadata. Use query for snapshot attribution.
+    func contains(coordinate: Coordinate, in region: RegionID) async throws -> Bool {
+        try await query(coordinate: coordinate, in: region).membership == .inside
+    }
+    func evaluate(location: CLLocation) async throws -> [RegionEvaluation] {
+        try await evaluate(location: LocationSample(
+            coordinate: Coordinate(longitude: location.coordinate.longitude, latitude: location.coordinate.latitude),
+            timestamp: location.timestamp, horizontalAccuracy: location.horizontalAccuracy,
+            speed: location.speed >= 0 ? location.speed : nil))
+    }
 }

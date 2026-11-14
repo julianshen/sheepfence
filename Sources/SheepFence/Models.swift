@@ -33,6 +33,8 @@ public enum LocationUnavailableReason: Equatable, Sendable {
     case authorizationRestricted
     case servicesDisabled
     case staleLocation
+    case futureLocation
+    case outOfOrderLocation
     case invalidAccuracy
     case invalidCoordinate
     case noLocation
@@ -97,6 +99,9 @@ public struct InstallResult: Equatable, Sendable {
 
 public enum GeofenceError: Error, Equatable, Sendable {
     case invalidConfiguration(String)
+    case invalidCoordinate
+    case sourceModeConflict
+    case monitoringNotStarted
     case datasetNotReady(String?)
     case regionNotFound(RegionID)
     case invalidSnapshot(regionID: String?, path: String, reason: String)
