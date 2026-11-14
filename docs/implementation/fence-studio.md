@@ -43,3 +43,37 @@ are the portable backup. No real device location was requested in browser testin
 Leaflet is vendored from the official 1.9.4 GitHub release, with license, exact file
 hashes and provenance beside the assets. Its JavaScript release build differs from
 the npm/CDN build; the CSS matches the published CDN SHA-256 value.
+
+## Quick-add place boundaries — 2026-11-14
+
+Double-click a mapped place, or use Add place at center, to add the smallest usable
+containing physical polygon from OpenStreetMap. Existing OSM fences are selected on
+repeat double-click without a new request. Export retains source IDs, source URL,
+attribution and ODbL reference. Manual drawing disables lookup.
+
+The point query excludes indoor rooms and regional/timezone/administrative relation
+outlines. Geometry conversion stitches complete relation member ways, retains holes
+and MultiPolygon parts, and validates the entire result. It never fabricates a box
+or radius for point-only or unsupported results. Application edits, import/new,
+Undo/Redo and explicit cancellation invalidate in-flight results.
+
+Validation:
+
+- 25 JavaScript geometry/lookup tests pass: topology, candidate containment and size,
+  actual White House fixture, caching/throttling, cancellation, timeout, HTTP errors,
+  malformed/oversized responses and concurrent request exclusion.
+- Browser checks with a captured real OSM response pass double-click addition,
+  duplicate selection, Undo/Redo, manual drawing isolation, stale-response rejection,
+  failed-service handling, snapshot export and mobile layout.
+- Production Swift importer: both EditorExportSmokeTests pass, including a snapshot
+  exported from the quick-add browser check for White House relation 19761182.
+- Live Overpass GET checks returned the real White House polygon. The final filtered
+  response was 10,589 bytes with two candidate areas. Public endpoints also produced
+  timeouts/504s, including a live browser attempt; mocked-response interaction checks
+  are distinguished from those service-availability results.
+
+The current provider is the VK Maps public Overpass instance; its configurable HTTPS
+URL is in `assets/editor/places-config.json`. Queries are explicit, serialized,
+throttled and cached for the session. They are not initiated on pan or hover. There
+is no automatic retry or alternate-provider fan-out. The provider receives the click
+coordinate, not the user's existing fence dataset. Public services are best-effort.

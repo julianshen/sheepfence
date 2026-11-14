@@ -2,6 +2,16 @@
 
 [Open Fence Studio](editor.html) to create fence data on an OpenStreetMap basemap. The tool runs in your browser and exports a SheepFence `FeatureCollection` ready for `installSnapshot(from:)` or `installSnapshot(data:)`.
 
+## Double-click to add a place
+
+Zoom in, then **double-click a building or place** to add its mapped OpenStreetMap boundary automatically. The tool selects the smallest usable physical place containing the clicked point, assigns its name and a stable OSM feature ID, and adds it as a normal editable fence. No manual tracing is needed. **Add place at center** offers the same action for touch and keyboard users.
+
+For example, enter **38.8977, -77.0365** in the Go field to visit the White House, then double-click its footprint or choose Add place at center. The mapped building boundary is added; it is different from the larger President's Park boundary. Click the surrounding grounds to look for that mapped area instead.
+
+Double-clicking a place already in your dataset selects its existing fence. Undo removes a newly added place. Quick add is disabled while manually drawing. A lookup can be cancelled; starting a new dataset or editing data also prevents an old response from adding a fence later.
+
+Quick add uses actual enclosing polygons, not an address match, bounding rectangle or invented radius. Indoor rooms and administrative boundaries are excluded. If the place is represented only by a point, has incomplete geometry, is over 25 km², or exceeds the editor's geometry limits, draw it manually. Map coverage and community service availability vary; a failed lookup leaves your dataset unchanged.
+
 ## Draw your first fence
 
 1. Pan and zoom the map, enter **latitude, longitude** in the Go field, or choose **My location** to request your browser's location permission.
@@ -34,11 +44,13 @@ Editor limits are 100 features, 1,000 vertices per ring, 10,000 vertices total a
 
 ## Privacy and map tiles
 
-Fence data is processed locally. Valid committed edits are autosaved in this browser's local storage when available. There is no account, upload endpoint, analytics, geocoding service or location-history upload. Download a backup before clearing browser data or using a different browser; private browsing and storage limits can prevent draft saving. Unfinished drawing points are not autosaved. Do not store sensitive boundary data in a shared browser profile.
+Fence editing and exports are processed locally. Quick add sends the clicked latitude and longitude to the configured OpenStreetMap boundary service; existing fence geometry is not uploaded. Valid committed edits are autosaved in this browser's local storage when available. There is no account, fence-upload endpoint, analytics or location-history upload. Download a backup before clearing browser data or using a different browser; private browsing and storage limits can prevent draft saving. Unfinished drawing points are not autosaved. Do not store sensitive boundary data in a shared browser profile.
 
 OpenStreetMap receives standard tile requests for the areas you view, along with browser/network metadata. The map keeps visible attribution, uses normal browser caching and does not prefetch offline maps. **My location** runs only when you choose it and centers the map without adding the location to the exported dataset.
 
 Map tiles require a network connection and are a best-effort community service. If tiles fail, coordinate editing, importing and exporting still work after the editor has loaded. Fence Studio does not provide an offline basemap or an uptime guarantee. For a high-traffic deployment, configure a tile provider whose terms and capacity fit the usage.
+
+Quick add currently uses the [VK Maps public Overpass instance](https://maps.mail.ru/osm/tools/overpass/) listed by [OpenStreetMap](https://wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances). Requests happen only when you explicitly add a place. There is one in-flight request, a two-second minimum interval, a five-minute session cache for repeated coordinates, a timeout and a 5 MB response limit. There are no automatic retries or background scans. Exported place features retain OSM source identifiers, attribution and the ODbL license reference. Review the [OpenStreetMap copyright and licensing guidance](https://www.openstreetmap.org/copyright) when distributing derived data.
 
 [OpenStreetMap tile policy](https://operations.osmfoundation.org/policies/tiles/) · [OpenStreetMap attribution](https://www.openstreetmap.org/copyright) · [Leaflet](https://leafletjs.com/)
 
@@ -46,4 +58,4 @@ Map tiles require a network connection and are a best-effort community service. 
 
 The application lives in `docs/site/editor.html` and `docs/site/assets/editor`. Leaflet 1.9.4 is vendored from its official GitHub release with its license and provenance in `docs/site/assets/vendor/leaflet`. No runtime CDN is required for the library.
 
-Run geometry/export regressions with `node --test scripts/tests/editor-model.test.mjs`. Build the site with `scripts/build_docs.py` as described in [Contributing](contributing.md). Test drawing, edits, import, undo and exported files in a browser before publishing changes.
+Run geometry/export and lookup regressions with `node --test scripts/tests/editor-*.test.mjs`. The HTTPS lookup endpoint and limits live in `docs/site/assets/editor/places-config.json`, so deployments can switch to their own Overpass service. Public services are best-effort; use a provider with suitable capacity for larger deployments. Build the site with `scripts/build_docs.py` as described in [Contributing](contributing.md). Test drawing, edits, import, undo and exported files in a browser before publishing changes.

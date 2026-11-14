@@ -8,7 +8,7 @@ offline snapshots, accuracy-aware observations and confirmed entry/exit events.
 
 ## Create fence polygons
 
-[Open Fence Studio](https://julianshen.github.io/sheepfence/editor.html) to draw and edit polygons on OpenStreetMap and export SDK-ready GeoJSON. Includes holes, MultiPolygon parts, import, local drafts and undo/redo. [Editor guide](docs/developer/fence-editor.md).
+[Open Fence Studio](https://julianshen.github.io/sheepfence/editor.html) to double-click mapped places for their boundaries, draw and edit polygons on OpenStreetMap, and export SDK-ready GeoJSON. Includes holes, MultiPolygon parts, import, local drafts and undo/redo. [Editor guide](docs/developer/fence-editor.md).
 
 ## Install
 

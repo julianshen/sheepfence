@@ -24,7 +24,7 @@ function ringsIntersect(a,b) {
   for(let i=0;i<a.length-1;i++) for(let j=0;j<b.length-1;j++) if(intersects(a[i],a[i+1],b[j],b[j+1])) return true;
   return false;
 }
-function classify(p,ring) {
+export function classify(p,ring) {
   let inside=false;
   for(let i=0,j=ring.length-2;i<ring.length-1;j=i++) {
     const a=ring[i],b=ring[j];

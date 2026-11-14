@@ -28,7 +28,7 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-      - run: node --test scripts/tests/editor-model.test.mjs
+      - run: node --test scripts/tests/editor-*.test.mjs
       - run: python scripts/build_docs.py
       - uses: actions/upload-pages-artifact@v4
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

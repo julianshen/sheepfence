@@ -1,0 +1,346 @@
+{
+  "version": 0.6,
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-14T14:35:18Z",
+    "timestamp_areas_base": "2026-11-14T12:05:02Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "relation",
+      "id": 19761182,
+      "bounds": {
+        "minlat": 38.8974904,
+        "minlon": -77.0368541,
+        "maxlat": 38.8977959,
+        "maxlon": -77.0362509
+      },
+      "members": [
+        {
+          "type": "way",
+          "ref": 238241022,
+          "role": "outer",
+          "geometry": [
+            {
+              "lat": 38.8975572,
+              "lon": -77.0366639
+            },
+            {
+              "lat": 38.8975572,
+              "lon": -77.0367006
+            },
+            {
+              "lat": 38.8975573,
+              "lon": -77.0367445
+            },
+            {
+              "lat": 38.8975573,
+              "lon": -77.0367838
+            },
+            {
+              "lat": 38.8975573,
+              "lon": -77.0367914
+            },
+            {
+              "lat": 38.8975574,
+              "lon": -77.0368537
+            },
+            {
+              "lat": 38.8975965,
+              "lon": -77.0368541
+            },
+            {
+              "lat": 38.8976282,
+              "lon": -77.0368539
+            },
+            {
+              "lat": 38.8976497,
+              "lon": -77.0368538
+            },
+            {
+              "lat": 38.8976765,
+              "lon": -77.0368536
+            },
+            {
+              "lat": 38.8977039,
+              "lon": -77.0368535
+            },
+            {
+              "lat": 38.8977184,
+              "lon": -77.0368535
+            },
+            {
+              "lat": 38.8977338,
+              "lon": -77.0368537
+            },
+            {
+              "lat": 38.8977959,
+              "lon": -77.0368535
+            },
+            {
+              "lat": 38.8977958,
+              "lon": -77.0368114
+            },
+            {
+              "lat": 38.8977956,
+              "lon": -77.0367946
+            },
+            {
+              "lat": 38.8977956,
+              "lon": -77.0367461
+            },
+            {
+              "lat": 38.8977956,
+              "lon": -77.036703
+            },
+            {
+              "lat": 38.8977958,
+              "lon": -77.0366683
+            },
+            {
+              "lat": 38.8977955,
+              "lon": -77.0366432
+            },
+            {
+              "lat": 38.8977953,
+              "lon": -77.0366324
+            },
+            {
+              "lat": 38.8977955,
+              "lon": -77.0365485
+            },
+            {
+              "lat": 38.8977953,
+              "lon": -77.036455
+            },
+            {
+              "lat": 38.8977953,
+              "lon": -77.0364279
+            },
+            {
+              "lat": 38.8977952,
+              "lon": -77.0363982
+            },
+            {
+              "lat": 38.8977952,
+              "lon": -77.0363412
+            },
+            {
+              "lat": 38.8977952,
+              "lon": -77.0363111
+            },
+            {
+              "lat": 38.8977951,
+              "lon": -77.0362526
+            },
+            {
+              "lat": 38.8977562,
+              "lon": -77.0362527
+            },
+            {
+              "lat": 38.8977387,
+              "lon": -77.0362527
+            },
+            {
+              "lat": 38.8977273,
+              "lon": -77.0362527
+            },
+            {
+              "lat": 38.8977034,
+              "lon": -77.0362528
+            },
+            {
+              "lat": 38.8977025,
+              "lon": -77.0362519
+            },
+            {
+              "lat": 38.897697,
+              "lon": -77.0362519
+            },
+            {
+              "lat": 38.8976776,
+              "lon": -77.0362516
+            },
+            {
+              "lat": 38.8976492,
+              "lon": -77.0362513
+            },
+            {
+              "lat": 38.8976212,
+              "lon": -77.036251
+            },
+            {
+              "lat": 38.8976084,
+              "lon": -77.0362509
+            },
+            {
+              "lat": 38.8975982,
+              "lon": -77.0362517
+            },
+            {
+              "lat": 38.8975842,
+              "lon": -77.0362517
+            },
+            {
+              "lat": 38.897557,
+              "lon": -77.036252
+            },
+            {
+              "lat": 38.8975569,
+              "lon": -77.0363105
+            },
+            {
+              "lat": 38.8975569,
+              "lon": -77.036321
+            },
+            {
+              "lat": 38.897557,
+              "lon": -77.0364451
+            },
+            {
+              "lat": 38.8975421,
+              "lon": -77.0364517
+            },
+            {
+              "lat": 38.8975286,
+              "lon": -77.0364611
+            },
+            {
+              "lat": 38.8975193,
+              "lon": -77.0364751
+            },
+            {
+              "lat": 38.8975109,
+              "lon": -77.0364878
+            },
+            {
+              "lat": 38.8975032,
+              "lon": -77.0365014
+            },
+            {
+              "lat": 38.8974963,
+              "lon": -77.0365181
+            },
+            {
+              "lat": 38.8974906,
+              "lon": -77.03654
+            },
+            {
+              "lat": 38.8974904,
+              "lon": -77.0365539
+            },
+            {
+              "lat": 38.8974908,
+              "lon": -77.0365616
+            },
+            {
+              "lat": 38.8974946,
+              "lon": -77.0365879
+            },
+            {
+              "lat": 38.8975024,
+              "lon": -77.0366076
+            },
+            {
+              "lat": 38.8975127,
+              "lon": -77.0366251
+            },
+            {
+              "lat": 38.8975209,
+              "lon": -77.0366344
+            },
+            {
+              "lat": 38.8975325,
+              "lon": -77.0366493
+            },
+            {
+              "lat": 38.8975401,
+              "lon": -77.0366562
+            },
+            {
+              "lat": 38.8975572,
+              "lon": -77.0366639
+            }
+          ]
+        }
+      ],
+      "tags": {
+        "addr:city": "Washington",
+        "addr:housename": "The White House",
+        "addr:housenumber": "1600",
+        "addr:postcode": "20500",
+        "addr:state": "DC",
+        "addr:street": "Pennsylvania Avenue Northwest",
+        "air_conditioning": "yes",
+        "alt_name": "Executive Residence",
+        "alt_name:hr": "Bila ku\u0107a",
+        "alt_name:vi": "Nh\u00e0 Tr\u1eafng",
+        "architect": "James Hoban",
+        "architect:wikipedia": "en:James Hoban",
+        "building": "government",
+        "building:colour": "white",
+        "building:levels": "5",
+        "check_date": "2026-09-18",
+        "contact:facebook": "https://www.facebook.com/WhiteHouse/",
+        "contact:instagram": "https://www.instagram.com/whitehouse/",
+        "contact:twitter": "https://x.com/whitehouse",
+        "dcgis:address": "1600 Pennsylvania Ave, NW",
+        "dcgis:aid": "293211",
+        "dcgis:area": "5170.992039",
+        "dcgis:gis": "HSE_0001",
+        "dcgis:label": "The White House",
+        "dcgis:length": "635.024279062",
+        "dcgis:list_info": "Reg",
+        "dcgis:nr_eligibl": "0",
+        "dcgis:objectid": "569",
+        "dcgis:ssl": "0187S 0800",
+        "dcgis:update_date": "Wed Feb 01 00:00:00 UTC 2006",
+        "internet_access": "wlan",
+        "max_level": "3",
+        "min_level": "-1",
+        "name": "White House",
+        "name:br": "Ti Gwenn",
+        "name:cs": "B\u00edl\u00fd d\u016fm",
+        "name:de": "Wei\u00dfes Haus",
+        "name:en": "White House",
+        "name:es": "Casa Blanca",
+        "name:etymology:wikipedia": "en:White",
+        "name:fa": "\u06a9\u0627\u062e \u0633\u0641\u06cc\u062f",
+        "name:fi": "Valkoinen talo",
+        "name:fr": "Maison Blanche",
+        "name:ga": "An Teach B\u00e1n",
+        "name:hi": "\u0935\u094d\u0939\u093e\u0907\u091f \u0939\u093e\u0909\u0938",
+        "name:hr": "Bijela ku\u0107a",
+        "name:hu": "Feh\u00e9r H\u00e1z",
+        "name:it": "Casa Bianca",
+        "name:ja": "\u30db\u30ef\u30a4\u30c8\u30cf\u30a6\u30b9",
+        "name:ko": "\ubc31\uc545\uad00",
+        "name:ku": "Qesra Sp\u00ee",
+        "name:lt": "Baltieji R\u016bmai",
+        "name:nl": "Witte Huis",
+        "name:pl": "Bia\u0142y Dom",
+        "name:pt": "Casa Branca",
+        "name:ro": "Casa Alb\u0103",
+        "name:ru": "\u0411\u0435\u043b\u044b\u0439 \u0434\u043e\u043c",
+        "name:si": "\u0db0\u0dc0\u0dbd \u0db8\u0db1\u0dca\u0daf\u0dd2\u0dbb\u0dba",
+        "name:sk": "Biely dom",
+        "name:sv": "Vita huset",
+        "name:tr": "Beyaz Saray",
+        "name:uk": "\u0411\u0456\u043b\u0438\u0439 \u0434\u0456\u043c",
+        "name:vi": "T\u00f2a B\u1ea1ch \u1ed0c",
+        "name:zh": "\u767d\u5bab",
+        "office": "government",
+        "official_name": "Executive Residence at the White House",
+        "old_name": "President's House;Executive Mansion",
+        "short_name": "WH",
+        "start_date": "1800-11-01",
+        "type": "multipolygon",
+        "website": "https://www.whitehouse.gov/",
+        "wheelchair": "yes",
+        "wikidata": "Q35525",
+        "wikimedia_commons": "Category:White House",
+        "wikipedia": "en:White House"
+      }
+    }
+  ]
+}

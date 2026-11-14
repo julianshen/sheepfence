@@ -21,14 +21,14 @@
 </header>
 <div class="workspace" id="workspace">
 <aside class="inspector" aria-label="Fence properties">
-<section class="intro"><span class="eyebrow">YOUR REGIONS, ON THE MAP</span><h1>Build a fence.</h1><p>Draw a boundary. Give it an identity.<br>Export a snapshot your app can use.</p></section>
+<section class="intro"><span class="eyebrow">YOUR REGIONS, ON THE MAP</span><h1>Build a fence.</h1><p>Double-click a place for its mapped boundary.<br>Or draw a fence of your own.</p></section>
 <section><div class="section-heading"><h2>Dataset</h2><button id="new" class="text-button">New</button></div>
 <form id="dataset-form"><label for="dataset-id">Dataset ID</label><input id="dataset-id" value="com.example.fences" required maxlength="200">
 <div class="two-column"><div><label for="revision">Revision</label><input id="revision" type="number" min="1" step="1" value="1" required></div><button type="button" id="bump">+ Revision</button></div>
 <button type="submit" class="subtle">Apply dataset</button><span class="unsaved" id="dataset-unsaved" hidden>Unapplied changes</span></form>
 <p class="hint" id="revision-hint">Increment the revision before installing an edited version of a published snapshot.</p></section>
 <section><div class="section-heading"><h2>Fences <span id="count" class="count">0</span></h2><button id="draw" class="primary">+ Draw fence</button></div>
-<div id="fence-list" class="fence-list" aria-label="Fences"></div><p id="empty" class="empty">No fences yet. Choose <strong>Draw fence</strong>, then click at least three points on the map.</p></section>
+<div id="fence-list" class="fence-list" aria-label="Fences"></div><p id="empty" class="empty">No fences yet. <strong>Double-click a building or place</strong> to add its mapped boundary, or choose <strong>Draw fence</strong>.</p></section>
 <section id="feature-panel" hidden><div class="section-heading"><h2>Selected fence</h2><button id="delete" class="danger text-button">Delete</button></div>
 <form id="feature-form"><label for="feature-id">Feature ID</label><input id="feature-id" required maxlength="200">
 <label for="feature-name">Display name</label><input id="feature-name" maxlength="300">
@@ -39,16 +39,16 @@
 <p class="hint">Drag a vertex to move it. Select a vertex for precise coordinates. Click a small + handle to insert a vertex.</p>
 <div id="vertex-panel" hidden><form id="vertex-form"><h3 id="vertex-title">Vertex</h3><div class="two-column"><div><label for="vertex-lat">Latitude</label><input type="number" step="any" id="vertex-lat" min="-90" max="90" required></div><div><label for="vertex-lng">Longitude</label><input type="number" step="any" id="vertex-lng" min="-180" max="180" required></div></div><div class="row"><button type="submit">Move vertex</button><button type="button" id="remove-vertex" class="danger">Remove</button></div></form></div>
 </section>
-<section class="privacy"><strong>Local by design.</strong> Fence data stays in this browser. Drafts are saved on this device when storage is available. OSM receives requests for the map areas you view. <a href="fence-editor.html#privacy-and-map-tiles">Details</a></section>
+<section class="privacy"><strong>Local by design.</strong> Fence data stays in this browser. Drafts are saved on this device when storage is available. OSM receives map tile requests. Quick add sends the clicked coordinate to the boundary lookup service. <a href="fence-editor.html#privacy-and-map-tiles">Details</a></section>
 </aside>
 <main class="map-workspace" aria-label="Map editor">
-<div class="map-toolbar"><form id="go-form" class="go-form"><label for="go-coordinates" class="sr-only">Go to latitude, longitude</label><input id="go-coordinates" placeholder="Latitude, longitude" aria-label="Go to latitude, longitude"><button type="submit">Go</button></form><button id="locate">My location</button><button id="fit">Fit fences</button><div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button></div><button id="preview">Preview JSON</button></div>
-<div class="map-container"><div id="map" aria-label="OpenStreetMap. Use Draw fence and click points to create a boundary."></div>
+<div class="map-toolbar"><form id="go-form" class="go-form"><label for="go-coordinates" class="sr-only">Go to latitude, longitude</label><input id="go-coordinates" placeholder="Latitude, longitude" aria-label="Go to latitude, longitude"><button type="submit">Go</button></form><button id="locate">My location</button><button id="fit">Fit fences</button><button id="quick-add" title="Add the mapped place at the center of the map">Add place at center</button><button id="cancel-lookup" hidden>Cancel lookup</button><div class="history"><button id="undo" disabled>Undo</button><button id="redo" disabled>Redo</button></div><button id="preview">Preview JSON</button></div>
+<div class="map-container"><div id="map" aria-label="OpenStreetMap. Double-click a place to add its boundary, or use Draw fence to create one."></div>
 <div class="map-caption"><span class="status-dot"></span> OPENSTREETMAP <span>·</span> <span id="coordinates">25.03300, 121.56540</span></div>
 <div id="draw-panel" class="draw-panel" hidden><div><strong id="draw-title">Drawing fence</strong><p id="draw-instruction">Click the map to place vertices.</p></div><button id="undo-point">Undo point</button><button id="finish" class="primary">Finish boundary</button><button id="cancel-draw">Cancel</button></div>
 <div id="map-notice" class="map-notice" hidden>Map tiles are unavailable. You can still edit coordinates, import and export fences.</div>
 </div>
-<div class="statusbar"><span id="status" role="status" aria-live="polite">Ready. Draw a fence to begin.</span><span id="save-status">Local draft</span></div>
+<div class="statusbar"><span id="status" role="status" aria-live="polite">Ready. Double-click a place to add its boundary.</span><span id="save-status">Local draft</span></div>
 <div class="map-footer"><span id="stats">0 fences · 0 vertices</span><a href="https://www.openstreetmap.org/fixthemap" target="_blank" rel="noopener">Report a map issue ↗</a></div>
 </main>
 </div>

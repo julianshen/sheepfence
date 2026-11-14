@@ -1,7 +1,9 @@
 import {clone,freshSnapshot,closeRing,polygons,validateSnapshot,readImport,serialize,MAX_BYTES} from './model.mjs';
+import {PlaceLookup} from './places.mjs';
 const $=id=>document.getElementById(id);
 const STORAGE='sheepfence-studio-v1';
 let snapshot=freshSnapshot(), selected=-1, part=0, ringIndex=0, vertex=-1;
+let activeLookup=null, placeService=null, editGeneration=0, selectionTimer=null;
 let drawing=null, past=[], future=[], datasetDirty=false, featureDirty=false;
 const message=(text,error=false)=>{$('status').textContent=text;$('status').classList.toggle('error',error);};
 function ready(allowDrawing=false) {
@@ -9,7 +11,7 @@ function ready(allowDrawing=false) {
   if(drawing&&!allowDrawing){message('Finish or cancel the current boundary first.',true);return false;}
   return true;
 }
-let restoreMessage='Ready. Draw a fence to begin.';
+let restoreMessage='Ready. Double-click a mapped place to add its boundary, or draw a fence.';
 try {
   const saved=localStorage.getItem(STORAGE);
   if(saved){snapshot=readImport(saved);selected=snapshot.features.length?0:-1;restoreMessage='Restored your local draft. Download a copy to keep a backup.';}
@@ -32,6 +34,7 @@ function save(){
 }
 function commit(next,text,options={}){
   try{validateSnapshot(next);}catch(error){message(error.message,true);return false;}
+  invalidateLookup();
   past.push(clone(snapshot));if(past.length>30)past.shift();future=[];
   snapshot=next;
   if(options.select!==undefined)selected=options.select;
@@ -74,7 +77,7 @@ function render(){
   }
   for(const form of ['dataset-form','feature-form']) for(const control of $(form).elements) control.disabled=!!drawing;
   $('undo').disabled=!past.length||!!drawing;$('redo').disabled=!future.length||!!drawing;
-  for(const id of ['draw','hole','part','delete','new','import','export','preview','ring'])$(id).disabled=!!drawing;
+  for(const id of ['quick-add','draw','hole','part','delete','new','import','export','preview','ring'])$(id).disabled=!!drawing;
   const stats=validateSnapshot(snapshot);$('stats').textContent=`${stats.regions} fences · ${stats.vertices.toLocaleString()} vertices`;
   renderMap();renderVertex();renderDraft();
 }
@@ -83,7 +86,16 @@ function renderMap(){
   shapes.clearLayers();handles.clearLayers();
   snapshot.features.forEach((f,i)=>{
     const layer=L.geoJSON(f,{interactive:!drawing,style:{color:i===selected?'#184e3b':'#598b6a',weight:i===selected?3:2,fillColor:i===selected?'#73ac74':'#99b5a0',fillOpacity:f.properties.enabled===false?0.08:0.24,dashArray:f.properties.enabled===false?'5 5':null}}).addTo(shapes);
-    layer.on('click',e=>{L.DomEvent.stopPropagation(e);selectFence(i);});
+    layer.on('click',e=>{
+      L.DomEvent.stopPropagation(e);clearTimeout(selectionTimer);
+      selectionTimer=setTimeout(()=>selectFence(i),250);
+    });
+    layer.on('dblclick',e=>{
+      if(f.properties.source!=='OpenStreetMap')return;
+      L.DomEvent.stopPropagation(e);clearTimeout(selectionTimer);
+      if(!ready())return;
+      selectFence(i);message(`“${f.properties.name||f.id}” is already in this dataset. Selected the existing fence.`);
+    });
     const name=document.createElement('span');name.textContent=f.properties.name||f.id;layer.bindTooltip(name,{sticky:true});
   });
   const ring=currentRing();if(!ring||drawing)return;
@@ -106,6 +118,7 @@ function renderVertex(){
 function startDraw(kind){
   if(!ready())return;if(kind!=='fence'&&!feature())return;
   if(kind==='fence'&&snapshot.features.length>=100){message('This editor supports up to 100 fences per snapshot.',true);return;}
+  invalidateLookup();
   drawing={kind,points:[]};vertex=-1;render();
   message('Click at least three map points, then choose Finish boundary. Escape cancels.');
 }
@@ -124,8 +137,60 @@ function renderDraft(){
 map.on('click',e=>{
   if(!drawing)return;
   if(drawing.points.length>=1000){message('A boundary can have at most 1,000 vertices.',true);return;}
-  drawing.points.push(point(e.latlng));renderDraft();
+  const nextPoint=point(e.latlng),last=drawing.points.at(-1);
+  if(e.originalEvent?.detail>1 || (last&&last[0]===nextPoint[0]&&last[1]===nextPoint[1]))return;
+  drawing.points.push(nextPoint);renderDraft();
 });
+
+function invalidateLookup(){
+  editGeneration++;
+  if(activeLookup){activeLookup.controller.abort();activeLookup=null;}
+  $('cancel-lookup').hidden=true;$('quick-add').disabled=!!drawing;
+}
+function cancelLookup(){invalidateLookup();message('Place lookup cancelled. Existing fences are unchanged.');}
+async function getPlaceService(signal){
+  if(placeService)return placeService;
+  const response=await fetch('assets/editor/places-config.json',{signal});
+  if(!response.ok)throw new Error('Place lookup configuration could not load. Try reloading the editor.');
+  const config=await response.json();
+  if(signal.aborted)throw new DOMException('Cancelled','AbortError');
+  placeService=new PlaceLookup(config);return placeService;
+}
+async function quickAdd(ll){
+  clearTimeout(selectionTimer);
+  if(!ready())return;
+  if(map.getZoom()<15){message('Zoom in to a building or place before double-clicking to add its boundary.',true);return;}
+  if(activeLookup){message('A place lookup is running. Cancel it before choosing another place.');return;}
+  if(snapshot.features.length>=100){message('This snapshot already has 100 fences.',true);return;}
+  const operation={controller:new AbortController(),generation:editGeneration};activeLookup=operation;
+  $('cancel-lookup').hidden=false;$('quick-add').disabled=true;
+  message('Finding the mapped boundary at this point…');
+  const configTimeout=setTimeout(()=>operation.controller.abort(),25000);
+  try{
+    const service=await getPlaceService(operation.controller.signal);
+    const found=await service.lookup(ll.lat,ll.lng,operation.controller.signal);
+    if(activeLookup!==operation||operation.generation!==editGeneration)return;
+    if(!ready())return;
+    const duplicate=snapshot.features.findIndex(f=>f.id===found.id||(f.properties.osm_type===found.properties.osm_type&&f.properties.osm_id===found.properties.osm_id));
+    if(duplicate>=0){selectFence(duplicate);message(`“${found.properties.name}” is already in this dataset. Selected the existing fence.`);return;}
+    const next=clone(snapshot);next.features.push(found);part=0;ringIndex=0;
+    if(commit(next,`Added “${found.properties.name}” from OpenStreetMap. Review its boundary; Undo removes it.`,{select:next.features.length-1})){
+      map.fitBounds(L.geoJSON(found).getBounds(),{padding:[60,60],maxZoom:18});
+    }
+  }catch(error){
+    if(activeLookup===operation)message(error.name==='AbortError'?'Place lookup stopped. Try again or draw the fence manually.':error.message,true);
+  }finally{
+    clearTimeout(configTimeout);
+    if(activeLookup===operation){activeLookup=null;$('cancel-lookup').hidden=true;$('quick-add').disabled=!!drawing;}
+  }
+}
+map.on('dblclick',e=>{
+  if(drawing||e.originalEvent?.target?.closest?.('.leaflet-marker-icon'))return;
+  quickAdd(e.latlng);
+});
+$('quick-add').onclick=()=>quickAdd(map.getCenter());
+$('cancel-lookup').onclick=cancelLookup;
+
 map.on('moveend',()=>{const p=map.getCenter();$('coordinates').textContent=`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;});
 $('draw').onclick=()=>startDraw('fence');$('hole').onclick=()=>startDraw('hole');$('part').onclick=()=>startDraw('part');
 $('undo-point').onclick=()=>{drawing.points.pop();renderDraft();};
@@ -146,11 +211,11 @@ $('finish').onclick=()=>{
   drawing=null;part=0;ringIndex=0;commit(next,'Boundary saved. Select its fence to edit properties or vertices.',{select:index});
 };
 $('dataset-form').addEventListener('input',()=>{
-  datasetDirty=true;$('dataset-unsaved').hidden=false;
+  invalidateLookup();datasetDirty=true;$('dataset-unsaved').hidden=false;
   for(const control of $('feature-form').elements)control.disabled=true;
 });
 $('feature-form').addEventListener('input',()=>{
-  featureDirty=true;$('feature-unsaved').hidden=false;
+  invalidateLookup();featureDirty=true;$('feature-unsaved').hidden=false;
   for(const control of $('dataset-form').elements)control.disabled=true;
 });
 $('dataset-form').onsubmit=e=>{
@@ -183,10 +248,10 @@ $('delete').onclick=()=>{
   const next=clone(snapshot);next.features.splice(selected,1);part=0;ringIndex=0;commit(next,'Fence deleted.');
 };
 $('undo').onclick=()=>{
-  if(!ready()||!past.length)return;future.push(clone(snapshot));snapshot=past.pop();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message('Undid the last change.');
+  if(!ready()||!past.length)return;invalidateLookup();future.push(clone(snapshot));snapshot=past.pop();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message('Undid the last change.');
 };
 $('redo').onclick=()=>{
-  if(!ready()||!future.length)return;past.push(clone(snapshot));snapshot=future.pop();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message('Redid the change.');
+  if(!ready()||!future.length)return;invalidateLookup();past.push(clone(snapshot));snapshot=future.pop();selected=Math.min(selected,snapshot.features.length-1);part=0;ringIndex=0;vertex=-1;save();render();message('Redid the change.');
 };
 $('new').onclick=()=>{if(!ready()||!confirm('Start a new dataset? Download your current snapshot to keep a separate copy. You can undo this.'))return;part=0;ringIndex=0;commit(freshSnapshot(),'New dataset started.',{select:-1});};
 function fit(){if(snapshot.features.length)map.fitBounds(shapes.getBounds(),{padding:[40,40],maxZoom:18});else message('Draw or import a fence first.');}
@@ -204,7 +269,7 @@ $('locate').onclick=()=>{
     message('Map centered on your location. This does not create or save a fence point.');
   },()=>{$('locate').disabled=false;message('Location unavailable. Enter coordinates in the Go field instead.',true);},{timeout:10000,maximumAge:60000});
 };
-$('import').onclick=()=>{if(ready())$('file').click();};
+$('import').onclick=()=>{if(ready()){invalidateLookup();$('file').click();}};
 $('file').onchange=async()=>{
   const file=$('file').files[0];$('file').value='';if(!file||!ready())return;
   if(file.size>MAX_BYTES){message('Import is larger than 5 MB.',true);return;}
@@ -234,6 +299,7 @@ $('copy').onclick=async()=>{
   catch{$('json-preview').focus();$('json-preview').select();message('Clipboard unavailable. Select and copy the preview manually.',true);}
 };
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&activeLookup){cancelLookup();return;}
   if(e.key==='Escape'&&drawing){$('cancel-draw').click();return;}
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))return;
   if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();$(e.shiftKey?'redo':'undo').click();}
