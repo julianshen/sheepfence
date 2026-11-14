@@ -1,4 +1,4 @@
-import {clone,classify,validateGeometry,MAX_BYTES} from './model.mjs';
+import {clone,classify,validateGeometry,MAX_BYTES} from './model.mjs?v=quick-add-1';
 
 const same=(a,b)=>a[0]===b[0]&&a[1]===b[1];
 function positions(geometry) {

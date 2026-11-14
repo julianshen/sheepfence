@@ -1,5 +1,5 @@
-import {clone,freshSnapshot,closeRing,polygons,validateSnapshot,readImport,serialize,MAX_BYTES} from './model.mjs';
-import {PlaceLookup} from './places.mjs';
+import {clone,freshSnapshot,closeRing,polygons,validateSnapshot,readImport,serialize,MAX_BYTES} from './model.mjs?v=quick-add-1';
+import {PlaceLookup} from './places.mjs?v=quick-add-1';
 const $=id=>document.getElementById(id);
 const STORAGE='sheepfence-studio-v1';
 let snapshot=freshSnapshot(), selected=-1, part=0, ringIndex=0, vertex=-1;
