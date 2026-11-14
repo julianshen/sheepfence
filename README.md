@@ -4,6 +4,8 @@ A foreground polygon geofencing SDK for iOS, distributed as a Swift Package Mana
 source library. Supports GeoJSON Polygon/MultiPolygon regions, overlapping areas,
 offline snapshots, accuracy-aware observations and confirmed entry/exit events.
 
+[Developer documentation](https://julianshen.github.io/sheepfence/) · [Quick start](docs/developer/quick-start.md) · [API guide](docs/developer/api.md)
+
 ## Install
 
 Add `https://github.com/julianshen/sheepfence` in Xcode's package dependencies and
@@ -114,6 +116,8 @@ Core Location requests, not guarantees. Adaptive sampling is explicitly opt-in v
 
 ## Documentation and validation
 
+- [Developer guides](docs/developer/index.md) — installation, queries, monitoring, datasets and troubleshooting
+- [Documentation website](https://julianshen.github.io/sheepfence/)
 - [DocC overview](Sources/SheepFence/SheepFence.docc/SheepFence.md)
 - [Migration guide](docs/sdk-migration.md) — the earlier stateful evaluate API changes
 - [Foreground example app](Examples/ForegroundHost/README.md)
