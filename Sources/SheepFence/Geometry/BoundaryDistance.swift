@@ -1,25 +1,24 @@
 import Foundation
 
 extension Geometry {
-    /// Distance in meters from point to nearest boundary edge across all rings/components.
+    /// Explicit boundary-distance estimate in local meters.
     /// Coordinate-linear edges mapped via local equirectangular projection at point latitude.
     /// Longitudes unwrapped relative to point for periodic correctness (split dateline components).
     ///
-    /// Explicit local support envelope (neighborhood-scale): |point latitude| <= 80° and every ring
-    /// vertex within 1° latitude and 1° unwrapped longitude of the query point. Outside this envelope,
-    /// or for invalid/unsupported mapping, returns 0 (uncertain; conservative lower bound, not an
-    /// overestimate of separation). This is an approximate local-meter model, not rigorous global
-    /// geodesic correctness. Datasets are not rejected; callers must combine with candidate/uncertainty
-    /// handling and must not treat 0/approximate results as proof of safe separation.
-    static func distanceToBoundary(_ point: Coordinate, in geometry: RegionGeometry) -> Double {
+    /// Support envelope (neighborhood-scale): |point latitude| <= 80° and every ring vertex within
+    /// 1° latitude and 1° unwrapped longitude of the query point. Outside this envelope, or for
+    /// invalid/unsupported mapping, returns `.unsupported(.outsideLocalModelRange)`. Non-finite
+    /// numerical results return `.unsupported(.numericalFailure)`. This is an approximate local-meter
+    /// model, not rigorous global geodesic correctness.
+    static func boundaryDistanceEstimate(_ point: Coordinate, in geometry: RegionGeometry) -> BoundaryDistanceEstimate {
         let maxSupportedAbsLatitude = 80.0
         let maxLocalExtentDegrees = 1.0
         var best = Double.infinity
         let refLat = point.latitude
         guard refLat.isFinite, point.longitude.isFinite,
-              abs(refLat) <= maxSupportedAbsLatitude else { return 0 }
+              abs(refLat) <= maxSupportedAbsLatitude else { return .unsupported(.outsideLocalModelRange) }
         let mLon = metersPerDegreeLongitude(at: refLat)
-        guard mLon.isFinite, mLon > 0, metersPerDegreeLatitude.isFinite else { return 0 }
+        guard mLon.isFinite, mLon > 0, metersPerDegreeLatitude.isFinite else { return .unsupported(.numericalFailure) }
         let pLon = point.longitude
         let pLat = point.latitude
         let p = (x: 0.0, y: pLat * metersPerDegreeLatitude)
@@ -39,24 +38,43 @@ extension Geometry {
             return (x: dLon * mLon, y: c.latitude * metersPerDegreeLatitude)
         }
 
+        var hasSegment = false
         for polygon in geometry.polygons {
             for ring in polygon.rings {
                 let r = openRing(ring)
                 guard r.count >= 2 else { continue }
                 var prevLon: Double? = nil
-                guard let firstPt = localPoint(for: r[0], previousLon: &prevLon, isFirst: true) else { return 0 }
+                guard let firstPt = localPoint(for: r[0], previousLon: &prevLon, isFirst: true) else {
+                    return .unsupported(.outsideLocalModelRange)
+                }
                 var prev = firstPt
                 for idx in 1..<r.count {
-                    guard let cur = localPoint(for: r[idx], previousLon: &prevLon, isFirst: false) else { return 0 }
+                    guard let cur = localPoint(for: r[idx], previousLon: &prevLon, isFirst: false) else {
+                        return .unsupported(.outsideLocalModelRange)
+                    }
                     let d = distancePointToSegment(p, prev, cur)
+                    guard d.isFinite, d >= 0 else { return .unsupported(.numericalFailure) }
+                    hasSegment = true
                     if d < best { best = d }
                     prev = cur
                 }
                 let dClose = distancePointToSegment(p, prev, firstPt)
+                guard dClose.isFinite, dClose >= 0 else { return .unsupported(.numericalFailure) }
+                hasSegment = true
                 if dClose < best { best = dClose }
             }
         }
-        return best.isFinite ? best : 0
+        guard hasSegment, best.isFinite, best >= 0 else { return .unsupported(.numericalFailure) }
+        return .approximateMeters(best)
+    }
+
+    /// Conservative adapter: returns 0 for unsupported distance (never overstates separation).
+    /// Callers needing explicit unsupported-vs-supported-zero must use `boundaryDistanceEstimate`.
+    static func distanceToBoundary(_ point: Coordinate, in geometry: RegionGeometry) -> Double {
+        switch boundaryDistanceEstimate(point, in: geometry) {
+        case .approximateMeters(let meters): return meters
+        case .unsupported: return 0
+        }
     }
 
     private static func distancePointToSegment(_ p: (x: Double, y: Double), _ a: (x: Double, y: Double), _ b: (x: Double, y: Double)) -> Double {

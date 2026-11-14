@@ -52,13 +52,30 @@ import Testing
         try bytes.write(to: url)
         defer { try? FileManager.default.removeItem(at: url) }
         let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 5, timeout: 10))
-        await #expect(throws: GeofenceError.downloadFailed("Download exceeded 5 bytes")) { try await source.read(from: url) }
+        await #expect(throws: GeofenceError.sourceFailed(.byteLimitExceeded(maximumBytes: 5))) { try await source.read(from: url) }
     }
 
-    @Test func unsupportedSchemeFails() async throws {
+    @Test func missingLocalReadMapsToFileReadWithoutPathLeak() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".geojson")
         let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 10))
-        let url = URL(string: "http://example.com/x")!
-        await #expect(throws: GeofenceError.unsupportedSource(url)) { _ = try await source.read(from: url) }
+        await #expect(throws: GeofenceError.sourceFailed(.fileRead)) { try await source.read(from: url) }
+        // The raw failure must not carry the path: assert against the structured case.
+    }
+
+    @Test func unreadableLocalReadMapsToFileRead() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".geojson")
+        try Data("payload".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: url.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: url.path) }
+        let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 10))
+        await #expect(throws: GeofenceError.sourceFailed(.fileRead)) { try await source.read(from: url) }
+    }
+
+    @Test func unsupportedSchemeFailsWithoutURL() async throws {
+        let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 10))
+        let url = URL(string: "http://example.com/user:secret@x")!
+        await #expect(throws: GeofenceError.sourceFailed(.unsupportedScheme)) { _ = try await source.read(from: url) }
     }
 
     @Test func successfulHTTPSReturnsExactBytes() async throws {
@@ -69,19 +86,28 @@ import Testing
         #expect(try await source.read(from: url) == bytes)
     }
 
-    @Test func non2xxFails() async throws {
+    @Test func non2xxMapsToHttpStatus() async throws {
         let url = URL(string: "https://example.com/data")!
         let response = HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: nil)!
         let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 10), transport: FakeTransport(data: Data(), response: response))
-        await #expect(throws: GeofenceError.self) { _ = try await source.read(from: url) }
+        await #expect(throws: GeofenceError.sourceFailed(.httpStatus(404))) { _ = try await source.read(from: url) }
     }
 
-    @Test func redirectFails() async throws {
+    @Test func redirectResponseMapsToRedirectRejectedWithoutURL() async throws {
         let url = URL(string: "https://example.com/data")!
-        let final = URL(string: "https://other.example.com/data")!
-        let response = HTTPURLResponse(url: final, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        let final = URL(string: "https://other.example.com/data?token=secret")!
+        let response = HTTPURLResponse(url: final, statusCode: 302, httpVersion: nil, headerFields: nil)!
         let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 10), transport: FakeTransport(data: Data("x".utf8), response: response))
-        await #expect(throws: GeofenceError.unsupportedSource(final)) { _ = try await source.read(from: url) }
+        // Even when a hostile server answers 302 with credentials in the target,
+        // the structured failure carries no URL at all.
+        await #expect(throws: GeofenceError.sourceFailed(.redirectRejected)) { _ = try await source.read(from: url) }
+    }
+
+    @Test func nonHTTPResponseMapsToNetwork() async throws {
+        let url = URL(string: "https://example.com/data")!
+        let response = URLResponse(url: url, mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
+        let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 10), transport: FakeTransport(data: Data("x".utf8), response: response))
+        await #expect(throws: GeofenceError.sourceFailed(.network)) { _ = try await source.read(from: url) }
     }
 
     @Test func oversizeContentFails() async throws {
@@ -90,10 +116,10 @@ import Testing
         await #expect(throws: GeofenceError.self) { _ = try await source.read(from: url) }
     }
 
-    @Test func transportErrorPropagates() async throws {
+    @Test func transportErrorMapsToNetworkWithoutRawNSError() async throws {
         let url = URL(string: "https://example.com/data")!
         let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 10), transport: FakeTransport(error: URLError(.notConnectedToInternet)))
-        await #expect(throws: GeofenceError.self) { _ = try await source.read(from: url) }
+        await #expect(throws: GeofenceError.sourceFailed(.network)) { _ = try await source.read(from: url) }
     }
 
     @Test func deterministicTimeoutThrows() async throws {
@@ -101,7 +127,7 @@ import Testing
         let transport = FakeTransport(data: Data("x".utf8))
         transport.delayNanos = 5_000_000_000 // 5 seconds
         let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 100, timeout: 0.1), transport: transport)
-        await #expect(throws: GeofenceError.downloadFailed("Download timed out after 0.1 seconds")) { _ = try await source.read(from: url) }
+        await #expect(throws: GeofenceError.sourceFailed(.timeout)) { _ = try await source.read(from: url) }
     }
 
     @Test func hugeTimeoutDoesNotTrap() async throws {
@@ -173,7 +199,7 @@ import Testing
     @Test func streamingLimitCancelsUnfinishedResponse() async throws {
         let source = HTTPSnapshotSource(policy: try DownloadPolicy(maximumBytes: 3, timeout: 2),
             transport: EphemeralTransport(protocolClasses: [ChunkedProtocol.self]))
-        await #expect(throws: GeofenceError.downloadFailed("Download exceeded 3 bytes")) {
+        await #expect(throws: GeofenceError.sourceFailed(.byteLimitExceeded(maximumBytes: 3))) {
             try await source.read(from: URL(string: "https://example.com/chunks")!)
         }
         var iterator = ChunkedProtocol.stopped.stream.makeAsyncIterator()

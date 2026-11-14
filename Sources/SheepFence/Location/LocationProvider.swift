@@ -1,6 +1,6 @@
 import Foundation
 
-public enum LocationSourceMode: Sendable { case hostProvided, sdkManaged }
+public enum LocationSourceMode: Equatable, Sendable { case hostProvided, sdkManaged }
 public struct LocationSample: Equatable, Sendable {
     public let coordinate: Coordinate
     public let timestamp: Date
@@ -26,7 +26,7 @@ enum LocationProviderEvent: Sendable {
     case location(LocationSample)
     case availability(LocationAvailability)
 }
-@MainActor protocol LocationProvider: AnyObject {
+@MainActor protocol LocationProvider: AnyObject, Sendable {
     var onEvent: (@MainActor @Sendable (LocationProviderEvent) -> Void)? { get set }
     func start()
     func stop()

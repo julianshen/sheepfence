@@ -22,11 +22,13 @@ import Testing
     }
     @Test func reportsNoLocationAndProviderEvaluationFailure() async throws {
         let (client, provider) = try make(expected: ["missing"])
-        var iterator = await client.events().makeAsyncIterator()
+        var iterator = try await client.events().makeAsyncIterator()
+        _ = try await iterator.next() // initial stopped snapshot
         try await client.startMonitoring(mode: .sdkManaged)
-        #expect(await iterator.next() == .locationAvailabilityChanged(LocationAvailability(reason: .noLocation)))
+        #expect(try await iterator.next() == .locationAvailabilityChanged(LocationAvailability(reason: .noLocation)))
+        _ = try await iterator.next() // start state snapshot
         provider.onEvent?(.location(LocationSample(coordinate: Coordinate(longitude: 0, latitude: 0), timestamp: Date(), horizontalAccuracy: 5)))
-        #expect(await iterator.next() == .evaluationFailed(.datasetNotReady("missing")))
+        #expect(try await iterator.next() == .evaluationFailed(.datasetNotReady("missing")))
         await client.stopMonitoring()
     }
     @Test func hostModeNeverStartsProvider() async throws {

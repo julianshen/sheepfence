@@ -1,5 +1,47 @@
 import Foundation
 
+/// Fixed sampling: explicit Core Location requests in meters, not guaranteed
+/// accuracy or update frequency. Validation per contract freeze v1:
+/// `distanceFilterMeters` finite and nonnegative (0 disables the distance
+/// filter), `desiredAccuracyMeters` finite and strictly positive. Core Location
+/// sentinel accuracies (e.g. kCLLocationAccuracyBest = -1) are intentionally
+/// not representable at this meters-scale API.
+public struct LocationSamplingConfiguration: Sendable, Equatable {
+    public let distanceFilterMeters: Double
+    public let desiredAccuracyMeters: Double
+
+    public init(distanceFilterMeters: Double, desiredAccuracyMeters: Double) throws {
+        guard distanceFilterMeters.isFinite, distanceFilterMeters >= 0 else {
+            throw GeofenceError.invalidConfiguration(
+                "distanceFilterMeters must be finite and nonnegative")
+        }
+        guard desiredAccuracyMeters.isFinite, desiredAccuracyMeters > 0 else {
+            throw GeofenceError.invalidConfiguration(
+                "desiredAccuracyMeters must be finite and positive")
+        }
+        self.distanceFilterMeters = distanceFilterMeters
+        self.desiredAccuracyMeters = desiredAccuracyMeters
+    }
+
+    /// Proposed fixed standard: 10 meter desired accuracy and 10 meter distance filter.
+    public static let standard = try! LocationSamplingConfiguration(
+        distanceFilterMeters: 10, desiredAccuracyMeters: 10)
+
+    /// Internal provider-facing mapping (SamplingSettings stays internal).
+    func settings() -> SamplingSettings {
+        SamplingSettings(distanceFilter: distanceFilterMeters, desiredAccuracy: desiredAccuracyMeters)
+    }
+}
+
+/// Monitoring sampling selection mode. Fixed is the safe default; adaptive
+/// tuning stays opt-in until field validation (uncalibrated placeholder
+/// defaults inside SamplingPolicyConfiguration).
+public enum SamplingMode: Sendable, Equatable {
+    case fixed(LocationSamplingConfiguration)
+    case adaptive(SamplingPolicyConfiguration)
+}
+
+
 /// Proposed facade integration API. SamplingPolicy owns a hysteresis band and
 /// emits conservative near/far settings based on the nearest boundary distance.
 /// Defaults are UNCALIBRATED placeholders; final values require field evidence.

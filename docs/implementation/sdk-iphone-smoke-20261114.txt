@@ -1,0 +1,7 @@
+Benchmark complete
+Device: iPhone, iOS 27.0.1
+Release host; public API timings, no GPS.
+separated: 2000 queries, P50 0.026208 ms, P95 0.028708 ms, P99 0.031417 ms
+overlapping: 2000 queries, P50 0.087750 ms, P95 0.161791 ms, P99 0.460791 ms
+All expected region IDs verified. Includes public facade/actor dispatch. Excludes import and verification.
+SDK smoke passed: SDK-managed start/stop, host submit, pure-query state isolation, distance, explicit host noLocation/history. No permission prompt or route test.

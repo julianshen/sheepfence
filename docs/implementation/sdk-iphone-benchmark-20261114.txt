@@ -1,0 +1,6 @@
+Benchmark complete
+Device: iPhone, iOS 27.0.1
+Release host; public API timings, no GPS.
+separated: 2000 queries, P50 0.026791 ms, P95 0.028916 ms, P99 0.032875 ms
+overlapping: 2000 queries, P50 0.085917 ms, P95 0.093042 ms, P99 0.267709 ms
+All expected region IDs verified. Includes public facade/actor dispatch. Excludes import and verification.

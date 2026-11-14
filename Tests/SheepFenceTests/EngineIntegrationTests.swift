@@ -10,6 +10,13 @@ actor TestSnapshotStore: SnapshotStore {
     var commits = 0
     func loadCommittedSnapshots() -> [ValidatedSnapshot] { Array(installed.values) }
     func setFailure(_ value: Bool) { fail = value }
+    func removeDataset(id: String) throws -> DatasetRemovalResult {
+        if fail { throw GeofenceError.storageFailed("injected") }
+        let removed = installed.removeValue(forKey: id)
+        return DatasetRemovalResult(datasetID: id,
+            removedRegionIDs: (removed?.regions.map(\.id) ?? []).sorted { $0.featureID < $1.featureID },
+            wasPresent: removed != nil)
+    }
     func commit(_ snapshot: ValidatedSnapshot) throws -> SnapshotCommit {
         commits += 1
         if fail { throw GeofenceError.storageFailed("injected") }
@@ -46,7 +53,8 @@ actor TestSnapshotStore: SnapshotStore {
         LocationSample(coordinate: Coordinate(longitude: longitude, latitude: 0.5), timestamp: Date(timeIntervalSince1970: time), horizontalAccuracy: accuracy)
     }
     func collectUntilMarker(_ engine: GeofenceEngine) async -> Task<[GeofenceEvent], Never> {
-        let stream = await engine.events()
+        try? await engine.startMonitoring(mode: .hostProvided)
+        let stream = await engine.transitionEventsForTests()
         return Task {
             var results: [GeofenceEvent] = []
             for await event in stream {
@@ -62,13 +70,13 @@ actor TestSnapshotStore: SnapshotStore {
         let engine = try engine([v1, v2, conflict], store: store)
         _ = try await engine.install(data: v2.sourceBytes)
         let collector = await collectUntilMarker(engine)
-        let initial = try await engine.evaluate(location: sample(1))
+        let initial = try await engine.submitResults(location: sample(1))
         #expect(try await engine.install(data: v2.sourceBytes).outcome == .unchanged)
         #expect(try await engine.install(data: v1.sourceBytes).outcome == .olderVersionSkipped)
         await #expect(throws: GeofenceError.self) { try await engine.install(data: conflict.sourceBytes) }
         await store.setFailure(true)
         await #expect(throws: GeofenceError.self) { try await engine.install(data: v1.sourceBytes) }
-        let uncertain = try await engine.evaluate(location: sample(0, 901))
+        let uncertain = try await engine.submitResults(location: sample(0, 901))
         #expect(uncertain[0].lastConfirmed == initial[0].lastConfirmed)
         #expect(try await engine.query(coordinate: Coordinate(longitude: 1, latitude: 0), in: id).revision == 2)
         try await engine.updateAvailability(LocationAvailability(reason: .servicesDisabled))
@@ -78,10 +86,10 @@ actor TestSnapshotStore: SnapshotStore {
         let first = snapshot(1), expanded = snapshot(2, edge: -2)
         let engine = try engine([first, expanded])
         _ = try await engine.install(data: first.sourceBytes)
-        _ = try await engine.evaluate(location: sample(-1))
+        _ = try await engine.submitResults(location: sample(-1))
         let collector = await collectUntilMarker(engine)
         _ = try await engine.install(data: expanded.sourceBytes)
-        let next = try await engine.evaluate(location: sample(-1, 901))
+        let next = try await engine.submitResults(location: sample(-1, 901))
         #expect(next[0].observation == .confirmed(.inside))
         try await engine.updateAvailability(LocationAvailability(reason: .servicesDisabled))
         let events = await collector.value
@@ -95,7 +103,7 @@ actor TestSnapshotStore: SnapshotStore {
         _ = try await engine.install(data: v1.sourceBytes)
         try await engine.startMonitoring(mode: .sdkManaged)
         let oldGeneration = await engine.monitoringGeneration()
-        await #expect(throws: GeofenceError.sourceModeConflict) { try await engine.evaluate(location: sample(1)) }
+        await #expect(throws: GeofenceError.sourceModeConflict) { try await engine.submitResults(location: sample(1)) }
         await engine.stopMonitoring()
         try await engine.startMonitoring(mode: .sdkManaged)
         #expect(try await engine.receive(sample(1), generation: oldGeneration).isEmpty)
@@ -106,18 +114,18 @@ actor TestSnapshotStore: SnapshotStore {
     @Test func locationInvalidityAndOrderingDoNotInventCrossings() async throws {
         let v1 = snapshot(1), engine = try engine([snapshot(1)])
         _ = try await engine.install(data: v1.sourceBytes)
-        let first = try await engine.evaluate(location: sample(-1))
-        #expect(try await engine.evaluate(location: sample(1, 899))[0].observation == .unavailable(.outOfOrderLocation))
-        #expect(try await engine.evaluate(location: sample(1, 900))[0].observation == .unavailable(.outOfOrderLocation))
-        #expect(try await engine.evaluate(location: sample(1, 1001))[0].observation == .unavailable(.futureLocation))
-        #expect(try await engine.evaluate(location: sample(1, 1))[0].observation == .unavailable(.staleLocation))
-        #expect(try await engine.evaluate(location: sample(1, 901, accuracy: -1))[0].lastConfirmed == first[0].lastConfirmed)
+        let first = try await engine.submitResults(location: sample(-1))
+        #expect(try await engine.submitResults(location: sample(1, 899))[0].observation == .unavailable(.outOfOrderLocation))
+        #expect(try await engine.submitResults(location: sample(1, 900))[0].observation == .unavailable(.outOfOrderLocation))
+        #expect(try await engine.submitResults(location: sample(1, 1001))[0].observation == .unavailable(.futureLocation))
+        #expect(try await engine.submitResults(location: sample(1, 1))[0].observation == .unavailable(.staleLocation))
+        #expect(try await engine.submitResults(location: sample(1, 901, accuracy: -1))[0].lastConfirmed == first[0].lastConfirmed)
     }
     @Test func emptyDatasetIsReadyAndMissingRegionErrors() async throws {
         let empty = snapshot(1, empty: true), engine = try engine([snapshot(1, empty: true)])
-        await #expect(throws: GeofenceError.datasetNotReady(nil)) { try await engine.evaluate(location: sample(1)) }
+        await #expect(throws: GeofenceError.datasetNotReady(nil)) { try await engine.submitResults(location: sample(1)) }
         _ = try await engine.install(data: empty.sourceBytes)
-        #expect(try await engine.evaluate(location: sample(1)).isEmpty)
+        #expect(try await engine.submitResults(location: sample(1)).isEmpty)
         await #expect(throws: GeofenceError.regionNotFound(id)) { try await engine.query(coordinate: Coordinate(longitude: 0, latitude: 0), in: id) }
     }
     @Test func concurrentInstallsKeepHighestSuccessfulRevision() async throws {

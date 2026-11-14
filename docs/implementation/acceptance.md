@@ -1,7 +1,9 @@
 # Functional acceptance evidence
 
-The tests below run on macOS using the production Swift package. Device location,
-Release timing and field energy gates remain pending in [performance.md](performance.md).
+The tests below run against the production Swift package. The completed SDK has
+139 passing tests on macOS and iOS Simulator, independent peer reviews, and a fresh
+Release iPhone synthetic benchmark; see [SDK evidence](sdk-progress.md). Real GPS/field
+energy and accuracy gates remain in [performance.md](performance.md).
 
 | Spec case | Evidence | Scope |
 |---|---|---|
@@ -17,6 +19,7 @@ Release timing and field energy gates remain pending in [performance.md](perform
 | Source policy | SourceTests | Actual production session redirect delegate; incomplete chunked response cancelled at cap; timeout; synchronized cancellation; huge timeout; local byte cap |
 
 The acceptance mapping is deliberately explicit about injected versus production
-paths. A full scripted real-import deletion/expansion/concurrent-download failure
-sequence and an executable iOS host are still integration follow-ups. Device and
-release acceptance are not inferred from green package tests.
+paths. The combined real-import deletion/expansion/concurrent-download failure sequence is
+covered by SDKReplacementTests (production source wrapper, decoder, SQLite and engine;
+controlled failing URLTransport). The executable iOS host is built and benchmarked.
+Real GPS and release acceptance are not inferred from green package tests.

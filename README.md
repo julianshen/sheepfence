@@ -1,92 +1,132 @@
 # SheepFence
 
-An iOS polygon geofencing SDK, initialized from
-[specification 0.3](geofence-sdk-spec-v0.3.md). Distributed as Swift Package Manager
-source with the `SheepFence` library product.
+A foreground polygon geofencing SDK for iOS, distributed as a Swift Package Manager
+source library. Supports GeoJSON Polygon/MultiPolygon regions, overlapping areas,
+offline snapshots, accuracy-aware observations and confirmed entry/exit events.
 
-## Status
+## Install
 
-Implementation is in progress. The package now contains strict GeoJSON import,
-polygon/hole/MultiPolygon containment, uncertainty-aware observations, serialized
-Core Data persistence, immutable query snapshots, and a public foreground client
-facade. Tests exercise real import/store/engine paths for both 100-region workloads.
+Add `https://github.com/julianshen/sheepfence` in Xcode's package dependencies and
+select the `SheepFence` product. Development currently uses the `main` branch; there
+is no versioned release tag yet.
+Requires Swift 6 and iOS 16+. macOS 13+ is supported for package/engine testing, not
+as a promised macOS location-monitoring product. No third-party dependencies.
 
-The public construction path restores SQLite snapshots and connects the local/HTTPS
-source, Core Location provider, and adaptive sampling. Source/provider cross-review
-and regression fixes are complete for this checkpoint (86 package tests pass). A [physical iPhone benchmark](docs/implementation/benchmark-iphone-20261114.md)
-passed both 100-area workloads. Device lifecycle checks and field acceptance remain pending; this is not a release-ready SDK.
-See [implementation progress](docs/implementation/progress.md).
+## Open a client
 
-Distance evaluation uses an approximate local meter model, currently limited to
-query latitudes within 80 degrees and vertices within one degree of the query.
-Outside this support envelope it returns uncertainty rather than claiming a precise
-boundary separation. Pure coordinate containment preserves GeoJSON straight edges;
-the dataset itself is not rejected for exceeding the meter-model envelope.
+Call from the main actor. Opening creates missing parent directories and restores
+committed datasets. Keep one live client per canonical SQLite URL.
 
-## Development
+```swift
+import SheepFence
 
-Open `Package.swift` in Xcode, or run with a Swift 6 toolchain on macOS:
+let client = try await SheepFenceClient.open(
+    storeURL: storeURL,
+    configuration: GeofenceConfiguration(maximumLocationAge: 60)
+)
+try await client.installSnapshot(from: bundledGeoJSONURL)
+```
+
+`maximumLocationAge` is your product choice; 60 seconds is an example. Input may be
+a bundle/local file, HTTPS URL, or `Data` via `installSnapshot(data:)`. Apps with
+custom authentication download their own data. Remote redirects are rejected;
+default limits are 5,000,000 bytes and 30 seconds. Replace them with `DownloadPolicy`
+in configuration when needed.
+
+Datasets use full-snapshot replacement and monotonic revisions. Failed imports keep
+the previous data available. List metadata with `datasets()` / `regions(in:)`, and
+remove data with `removeDataset(id:)`. See the [GeoJSON specification](geofence-sdk-spec-v0.3.md).
+
+## Where am I?
+
+```swift
+let batch = try await client.evaluate(location: currentLocation) // CLLocation or LocationSample
+let inside = batch.results.filter { $0.observation == .confirmed(.inside) }
+```
+
+This evaluates all enabled regions without changing tracking state or emitting events.
+Several overlapping regions may match. `boundaryUncertain` means the reported GPS
+accuracy cannot support a confirmed answer. An unavailable observation is not outside.
+
+For coordinate-only geometry, use `query(coordinate:in:)` or `contains(coordinate:in:)`.
+Named disabled regions can also be queried. Results identify the dataset revision used.
+
+## How far to a region?
+
+```swift
+let distance = try await client.distance(from: coordinate, to: regionID)
+let toRegion = distance.distanceToRegionMeters       // 0 inside; nearest edge outside
+let toEdge = distance.distanceToBoundaryMeters       // nearest edge from either side
+```
+
+Inspect `boundaryDistance` for `.approximateMeters` versus `.unsupported`. Unsupported
+outside distances return nil, never a fabricated zero. This is straight-line distance,
+not walking/driving distance, and does not account for GPS accuracy.
+
+The current local meter model supports query latitudes within 80 degrees and every
+geometry vertex within one degree of the query in latitude/unwrapped longitude.
+A distant component makes distance unsupported. Coordinate containment still works;
+monitoring remains conservative about uncertain boundary separation.
+
+## Foreground monitoring
+
+The app owns permission prompts, `NSLocationWhenInUseUsageDescription` and foreground
+lifecycle. The SDK never requests permission automatically.
+
+```swift
+let stream = try await client.events()
+let eventTask = Task { @MainActor in
+    do {
+        for try await event in stream {
+            // Handle initial/current state, evaluated batches, crossings and diagnostics.
+            handle(event)
+        }
+    } catch {
+        // Includes slow-consumer overflow. Resubscribe to recover current state.
+        showError(error)
+    }
+}
+try await client.startMonitoring(mode: .sdkManaged)
+
+// When leaving foreground:
+await client.stopMonitoring()
+// When disposing the subscriber:
+eventTask.cancel()
+```
+
+For app-owned GPS, start `.hostProvided`, call `submit(location:)`, and report source
+availability with `updateAvailability(_:)`. `submit` changes monitoring state;
+`evaluate` remains a pure query in any mode. Stop before switching modes.
+
+Use `state()` for an atomic current-state snapshot. GPS loss reports unavailable and
+retains historical last confirmation with its timestamp. Recovery establishes a baseline
+instead of inferring a crossing through the outage. No expiry timer event is promised;
+refresh state or use timestamps when rendering potentially stale observations.
+
+Each subscription has an independent ordered buffer (default 256). Overflow terminates
+that subscriber with an explicit error; it does not silently drop crossings or block GPS
+processing. Initial state is delivered atomically before later events. Streams are not
+durable movement logs. No location history is persisted or uploaded.
+
+Fixed sampling defaults to requested 10 m accuracy / 10 m distance filter. These are
+Core Location requests, not guarantees. Adaptive sampling is explicitly opt-in via
+`SamplingMode.adaptive` and requires field calibration.
+
+## Documentation and validation
+
+- [DocC overview](Sources/SheepFence/SheepFence.docc/SheepFence.md)
+- [Migration guide](docs/sdk-migration.md) — the earlier stateful evaluate API changes
+- [Foreground example app](Examples/ForegroundHost/README.md)
+- [SDK completion evidence](docs/implementation/sdk-progress.md)
+- [Acceptance coverage](docs/implementation/acceptance.md)
 
 ```sh
 swift build
 swift test
 ```
 
-The package provisionally targets iOS 16+. macOS 13+ supports local package tests;
-it is not a promise of a macOS monitoring product. Confirm the minimum iOS version
-before release. No third-party dependencies are required by this scaffold.
-
-The host owns foreground lifecycle and Core Location permission prompts, including
-`NSLocationWhenInUseUsageDescription`. `GeofenceConfiguration` requires an explicit
-location validity window; the specification does not yet prescribe one.
-
-## Opening a client
-
-Call from the main actor with a writable SQLite file URL in an existing directory:
-
-```swift
-let client = try await SheepFenceClient.open(
-    storeURL: storeURL,
-    configuration: GeofenceConfiguration(maximumLocationAge: 60),
-    downloadPolicy: DownloadPolicy(maximumBytes: 5_000_000, timeout: 30),
-    samplingConfiguration: SamplingPolicyConfiguration()
-)
-let events = await client.events()
-let eventTask = Task {
-    for await event in events {
-        // Handle baseline, movement, dataset and availability events.
-    }
-}
-try await client.installSnapshot(from: bundledGeoJSONURL)
-try await client.startMonitoring(mode: .sdkManaged)
-// When the host leaves the foreground:
-await client.stopMonitoring()
-eventTask.cancel()
-```
-
-The values above illustrate configuration, not measured product thresholds.
-The host requests location authorization separately. Use `.hostProvided` when
-the app owns location acquisition, then call `evaluate(location:)` and
-`updateAvailability(_:)`; do not mix both sources in one active session.
-Coordinate-only `query(coordinate:in:)` works offline after restoration and does
-not emit movement events. Retain the client for the session and explicitly stop
-monitoring when the host leaves the foreground.
-
-## Implementation sequence
-
-1. Decode and validate schema v1, properties, rings, holes and MultiPolygons, with
-   feature IDs and JSON paths in errors. Enforce antimeridian splitting.
-2. Implement bounding-box filtering, polygon containment (including hole boundaries),
-   and local meter distances with uncertainty-aware candidate selection.
-3. Implement transactional Core Data persistence, revision rules, SHA-256 identity,
-   startup restoration and immutable query snapshots.
-4. Implement observation baselines, uncertainty handling, transitions, dataset-change
-   reevaluation and asynchronous events.
-5. Implement local/HTTPS installation and foreground Core Location integration,
-   with a single location source per session and adaptive sampling.
-6. Run all section 8 acceptance cases and section 8.1 capacity workloads through
-   the production importer and store. Measure Release P50/P95 on a real iPhone.
-
-Before acceptance, select a benchmark device, maximum location age, acceptable
-event latency, and field-tested accuracy/power thresholds. SDK Git release tags
-(for example `0.1.0`) are independent of `dataset.revision`.
+The SDK has deterministic tests for storage, geometry, public integration, availability,
+events, cancellation and capacity. Physical GPS/lifecycle and field accuracy/energy
+acceptance remain separate from synthetic tests; this is pre-release software. There
+is no performance SLA or background-monitoring guarantee. Release version and licensing
+remain to be selected before a versioned distribution.

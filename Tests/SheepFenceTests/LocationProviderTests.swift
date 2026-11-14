@@ -8,6 +8,17 @@ private final class ReducedAccuracyManager: CLLocationManager {
     override var authorizationStatus: CLAuthorizationStatus { .authorizedAlways }
 }
 
+/// Injected authorization state; never depends on the host's live status.
+private final class AuthStatusManager: CLLocationManager {
+    private let status: CLAuthorizationStatus
+    init(status: CLAuthorizationStatus) {
+        self.status = status
+        super.init()
+    }
+    override var authorizationStatus: CLAuthorizationStatus { status }
+    override var accuracyAuthorization: CLAccuracyAuthorization { .fullAccuracy }
+}
+
 @MainActor @Suite struct LocationProviderTests {
     @Test func coreProviderAppliesSamplingSettings() {
         let manager = CLLocationManager()
@@ -92,6 +103,48 @@ private final class ReducedAccuracyManager: CLLocationManager {
         var policy2 = SamplingPolicy(configuration: try SamplingPolicyConfiguration(nearDistanceMeters: 50, farDistanceMeters: 100))
         let far = policy2.settings(nearestBoundaryMeters: 150, accuracy: 5, speed: nil)
         #expect(far.distanceFilter == 25)
+    }
+
+    @Test func authorizationStatesMapToExplicitReasons() async throws {
+        // Deterministic injected status; the Mac's live authorization never decides.
+        for (status, expected) in [
+            (CLAuthorizationStatus.notDetermined, LocationUnavailableReason.authorizationNotDetermined),
+            (.restricted, .authorizationRestricted),
+            (.denied, .authorizationDenied),
+        ] {
+            let manager = AuthStatusManager(status: status)
+            let provider = CoreLocationProvider(manager: manager)
+            manager.delegate = nil
+            let (stream, continuation) = AsyncStream<LocationProviderEvent>.makeStream()
+            provider.onEvent = { continuation.yield($0) }
+            var iterator = stream.makeAsyncIterator()
+            provider.start()
+            let event = await iterator.next()
+            if case .availability(let availability) = event {
+                #expect(availability.reason == expected)
+                #expect(!availability.reducedAccuracy)
+            } else { Issue.record("Expected availability callback for \(status)") }
+            provider.stop()
+            continuation.finish()
+            provider.onEvent = nil
+        }
+    }
+
+    @Test func startReportsAvailabilityOncePerStart() async throws {
+        let manager = AuthStatusManager(status: .authorizedAlways)
+        let provider = CoreLocationProvider(manager: manager)
+        manager.delegate = nil
+        let (stream, continuation) = AsyncStream<LocationProviderEvent>.makeStream()
+        provider.onEvent = { continuation.yield($0) }
+        var iterator = stream.makeAsyncIterator()
+        provider.start()
+        let first = await iterator.next()
+        if case .availability(let availability) = first {
+            #expect(availability.reason == nil)  // allowed with services enabled
+        } else { Issue.record("Expected initial availability callback") }
+        provider.stop()
+        continuation.finish()
+        provider.onEvent = nil
     }
 
     @Test func samplingPolicySpeedLookaheadAffectsClearance() throws {

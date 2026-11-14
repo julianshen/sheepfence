@@ -6,12 +6,14 @@ import Foundation
 final class CoreDataSnapshotStore: SnapshotStore, @unchecked Sendable {
     typealias CommitInterceptor = @Sendable (Int) async throws -> Void
     typealias SaveInterceptor = @Sendable (Int) throws -> Void
+    typealias RemoveInterceptor = @Sendable (String) throws -> Void
 
     private let container: NSPersistentContainer
     private let context: NSManagedObjectContext
     private let queue = DispatchQueue(label: "SheepFence.CoreDataSnapshotStore")
     private let beforeCommit: CommitInterceptor
     private let beforeSave: SaveInterceptor
+    private let beforeRemove: RemoveInterceptor
     private var readCount = 0
 
     var readCountSnapshot: Int {
@@ -24,8 +26,19 @@ final class CoreDataSnapshotStore: SnapshotStore, @unchecked Sendable {
     init(
         url: URL,
         beforeCommit: @escaping CommitInterceptor = { _ in },
-        beforeSave: @escaping SaveInterceptor = { _ in }
+        beforeSave: @escaping SaveInterceptor = { _ in },
+        beforeRemove: @escaping RemoveInterceptor = { _ in }
     ) throws {
+        // A new store's parent directory is created here so `open` only needs to
+        // canonicalize the path and lease the URL beforehand (contract pin).
+        do {
+            try FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+        } catch {
+            throw GeofenceError.storageFailed("Cannot create store directory: \(error)")
+        }
         let description = NSPersistentStoreDescription(url: url)
         description.type = NSSQLiteStoreType
         self.container = try Self.makeContainer(with: description)
@@ -33,12 +46,14 @@ final class CoreDataSnapshotStore: SnapshotStore, @unchecked Sendable {
         self.context.undoManager = nil
         self.beforeCommit = beforeCommit
         self.beforeSave = beforeSave
+        self.beforeRemove = beforeRemove
     }
 
     init(
         inMemory: Bool,
         beforeCommit: @escaping CommitInterceptor = { _ in },
-        beforeSave: @escaping SaveInterceptor = { _ in }
+        beforeSave: @escaping SaveInterceptor = { _ in },
+        beforeRemove: @escaping RemoveInterceptor = { _ in }
     ) throws {
         guard inMemory else {
             throw GeofenceError.invalidConfiguration("Use init(url:) for the SQLite store")
@@ -50,6 +65,30 @@ final class CoreDataSnapshotStore: SnapshotStore, @unchecked Sendable {
         self.context.undoManager = nil
         self.beforeCommit = beforeCommit
         self.beforeSave = beforeSave
+        self.beforeRemove = beforeRemove
+    }
+
+    func removeDataset(id: String) async throws -> DatasetRemovalResult {
+        try await perform { context in
+            let request = NSFetchRequest<NSManagedObject>(entityName: "DatasetRecord")
+            request.predicate = NSPredicate(format: "datasetID == %@", id)
+            request.fetchLimit = 1
+            guard let current = try context.fetch(request).first else {
+                return DatasetRemovalResult(datasetID: id, removedRegionIDs: [], wasPresent: false)
+            }
+            let snapshot = try Self.snapshot(from: current)
+            let regionIDs = snapshot.regions.map(\.id).sorted(by: regionIDOrder)
+            context.delete(current)
+            do {
+                try self.beforeRemove(id)
+                try context.save()
+            } catch {
+                // Restore the in-memory context and the prior durable snapshot.
+                context.rollback()
+                throw error
+            }
+            return DatasetRemovalResult(datasetID: id, removedRegionIDs: regionIDs, wasPresent: true)
+        }
     }
 
     func loadCommittedSnapshots() async throws -> [ValidatedSnapshot] {

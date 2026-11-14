@@ -96,6 +96,103 @@ import Testing
         #expect(try await coordinated.loadCommittedSnapshots() == [revisionFive])
     }
 
+    @Test func removeDatasetRemovesSnapshotReportsSortedIDsAndStaysDurable() async throws {
+        let url = try makeSQLiteURL()
+        let snapshot = PreparedSnapshotBuilder.make(
+            id: "campus", revision: 3,
+            regions: [makeRegion(datasetID: "campus", featureID: "zoo"),
+                      makeRegion(datasetID: "campus", featureID: "atrium"),
+                      makeRegion(datasetID: "campus", featureID: "midway")]
+        )
+        let store = try CoreDataSnapshotStore(url: url)
+        _ = try await store.commit(snapshot)
+
+        let removal = try await store.removeDataset(id: "campus")
+        #expect(removal.wasPresent)
+        #expect(removal.datasetID == "campus")
+        #expect(removal.removedRegionIDs == [
+            RegionID(datasetID: "campus", featureID: "atrium"),
+            RegionID(datasetID: "campus", featureID: "midway"),
+            RegionID(datasetID: "campus", featureID: "zoo"),
+        ])
+        #expect(try await store.loadCommittedSnapshots().isEmpty)
+
+        let reopened = try CoreDataSnapshotStore(url: url)
+        #expect(try await reopened.loadCommittedSnapshots().isEmpty)
+    }
+
+    @Test func removingMissingDatasetIsIdempotentNoOp() async throws {
+        let store = try CoreDataSnapshotStore(inMemory: true)
+        let snapshot = PreparedSnapshotBuilder.make(revision: 1, regions: [makeRegion(datasetID: "test", featureID: "first")])
+        _ = try await store.commit(snapshot)
+
+        let removal = try await store.removeDataset(id: "absent")
+        #expect(removal == DatasetRemovalResult(datasetID: "absent", removedRegionIDs: [], wasPresent: false))
+        #expect(try await store.loadCommittedSnapshots() == [snapshot])
+
+        // Removing twice stays a no-op; removing then removing again never recreates data.
+        _ = try await store.removeDataset(id: "test")
+        let second = try await store.removeDataset(id: "test")
+        #expect(second.wasPresent == false)
+        #expect(try await store.loadCommittedSnapshots().isEmpty)
+    }
+
+    @Test func removalOnlyAffectsNamedDataset() async throws {
+        let store = try CoreDataSnapshotStore(inMemory: true)
+        let kept = PreparedSnapshotBuilder.make(id: "keep", revision: 1, regions: [makeRegion(datasetID: "keep", featureID: "r")])
+        let dropped = PreparedSnapshotBuilder.make(id: "drop", revision: 1, regions: [makeRegion(datasetID: "drop", featureID: "r")])
+        _ = try await store.commit(kept)
+        _ = try await store.commit(dropped)
+
+        let removal = try await store.removeDataset(id: "drop")
+        #expect(removal.removedRegionIDs == [RegionID(datasetID: "drop", featureID: "r")])
+        #expect(try await store.loadCommittedSnapshots() == [kept])
+    }
+
+    @Test func failedRemovalRollsBackAndPreservesOldData() async throws {
+        let url = try makeSQLiteURL()
+        let current = PreparedSnapshotBuilder.make(revision: 3, bytes: Data("current".utf8))
+        let store = try CoreDataSnapshotStore(url: url, beforeRemove: { id in
+            if id == "test" { throw GeofenceError.storageFailed("injected removal failure") }
+        })
+        _ = try await store.commit(current)
+
+        await #expect(throws: GeofenceError.storageFailed("injected removal failure")) {
+            _ = try await store.removeDataset(id: "test")
+        }
+        #expect(try await store.loadCommittedSnapshots() == [current])
+
+        let reopened = try CoreDataSnapshotStore(url: url)
+        #expect(try await reopened.loadCommittedSnapshots() == [current])
+    }
+
+    @Test func removalThenLaterInstallCanRecreateDataset() async throws {
+        let store = try CoreDataSnapshotStore(inMemory: true)
+        let first = PreparedSnapshotBuilder.make(revision: 1, regions: [makeRegion(datasetID: "test", featureID: "old")])
+        _ = try await store.commit(first)
+        #expect(try await store.removeDataset(id: "test").wasPresent)
+
+        // A removal is not cancellation of a later install: a committed reinstall recreates it.
+        let recreated = PreparedSnapshotBuilder.make(revision: 2, regions: [makeRegion(datasetID: "test", featureID: "new")])
+        let commit = try await store.commit(recreated)
+        #expect(commit.result.outcome == .installed)
+        #expect(try await store.loadCommittedSnapshots() == [recreated])
+    }
+
+    @Test func storeInitCreatesMissingParentDirectories() async throws {
+        let base = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let url = base.appendingPathComponent("nested/deeper/snapshots.sqlite")
+        defer { try? FileManager.default.removeItem(at: base) }
+        let store = try CoreDataSnapshotStore(url: url)
+        #expect(FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path))
+
+        let snapshot = PreparedSnapshotBuilder.make(revision: 1, regions: [makeRegion(datasetID: "test", featureID: "r")])
+        _ = try await store.commit(snapshot)
+        let reopened = try CoreDataSnapshotStore(url: url)
+        #expect(try await reopened.loadCommittedSnapshots() == [snapshot])
+    }
+
     @Test func failedHigherRevisionDoesNotBlockHeldLowerRevision() async throws {
         let gate = RevisionGate()
         let store = try CoreDataSnapshotStore(

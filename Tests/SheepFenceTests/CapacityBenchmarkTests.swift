@@ -34,7 +34,7 @@ import Testing
                     coordinate: Coordinate(longitude: overlapping ? 10 : 10 + Double(region) * 0.05, latitude: 20),
                     timestamp: Date(timeIntervalSince1970: 1000 + Double(index)), horizontalAccuracy: 1)
                 let start = clock.now
-                let results = try await engine.evaluate(location: sample)
+                let results = try await engine.evaluateOnce(location: sample).results
                 let elapsed = start.duration(to: clock.now).components
                 if index >= warmup {
                     milliseconds.append(Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15)

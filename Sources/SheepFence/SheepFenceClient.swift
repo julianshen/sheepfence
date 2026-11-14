@@ -4,6 +4,7 @@ import Foundation
 @MainActor public final class SheepFenceClient: GeofenceClient {
     private let engine: GeofenceEngine
     private let provider: any LocationProvider
+    private let usesAdaptiveSampling: Bool
     private let sampling: @MainActor @Sendable (Double?, LocationSample) -> SamplingSettings
     private let resetSampling: @MainActor @Sendable () -> SamplingSettings?
     private var mode: LocationSourceMode?
@@ -13,44 +14,97 @@ import Foundation
 
     init(engine: GeofenceEngine, provider: any LocationProvider,
          sampling: @escaping @MainActor @Sendable (Double?, LocationSample) -> SamplingSettings,
-         resetSampling: @escaping @MainActor @Sendable () -> SamplingSettings? = { nil }) {
+         resetSampling: @escaping @MainActor @Sendable () -> SamplingSettings? = { nil },
+         usesAdaptiveSampling: Bool = true) {
         self.engine = engine; self.provider = provider; self.sampling = sampling
+        self.usesAdaptiveSampling = usesAdaptiveSampling
         self.resetSampling = resetSampling
     }
 
-    /// Opens a persistent store and restores committed datasets before returning.
-    /// The host supplies a writable SQLite URL and owns permissions and foreground lifecycle.
-    public static func open(storeURL: URL, configuration: GeofenceConfiguration,
-                            downloadPolicy: DownloadPolicy,
-                            samplingConfiguration: SamplingPolicyConfiguration) async throws -> SheepFenceClient {
-        let (store, snapshots) = try await Task.detached {
-            let store = try CoreDataSnapshotStore(url: storeURL)
-            return (store, try await store.loadCommittedSnapshots())
-        }.value
+    deinit {
+        let ownedProvider = provider
+        Task { @MainActor in ownedProvider.onEvent = nil; ownedProvider.stop() }
+    }
+
+    /// Restores committed datasets. One live client is permitted per canonical store URL.
+    public static func open(storeURL: URL, configuration: GeofenceConfiguration) async throws -> SheepFenceClient {
         try Task.checkCancellation()
+        let lease = try StoreLease.acquire(for: storeURL)
+        let store: CoreDataSnapshotStore
+        let snapshots: [ValidatedSnapshot]
+        do {
+            (store, snapshots) = try await Task.detached {
+                // Retain lease across detached initialization even if caller is cancelled.
+                let store = try CoreDataSnapshotStore(url: lease.url)
+                return (store, try await store.loadCommittedSnapshots())
+            }.value
+            try Task.checkCancellation()
+        } catch {
+            if error is CancellationError || error is GeofenceError { throw error }
+            throw GeofenceError.storageFailed("Could not open the snapshot store")
+        }
         let engine = GeofenceEngine(configuration: configuration, store: store,
-            source: HTTPSnapshotSource(policy: downloadPolicy),
-            decoder: { try GeoJSONDecoder.decode($0) },
+            source: HTTPSnapshotSource(policy: configuration.downloadPolicy), decoder: { try GeoJSONDecoder.decode($0) },
             geometry: GeometryOperations(contains: { Geometry.contains($0, in: $1) },
                 distance: { Geometry.distanceToBoundary($0, in: $1) },
                 candidate: { Geometry.isCandidate($0, radiusMeters: $1, bounds: $2) }),
-            snapshots: snapshots)
-        var policy = SamplingPolicy(configuration: samplingConfiguration)
-        return SheepFenceClient(engine: engine, provider: CoreLocationProvider(),
-            sampling: { distance, sample in
-                policy.settings(nearestBoundaryMeters: distance, accuracy: sample.horizontalAccuracy, speed: sample.speed)
-            }, resetSampling: {
-                policy = SamplingPolicy(configuration: samplingConfiguration)
-                return policy.settings(nearestBoundaryMeters: nil, accuracy: .infinity, speed: nil)
-            })
+            snapshots: snapshots, storeLease: lease)
+        switch configuration.sampling {
+        case .fixed(let fixed):
+            let settings = SamplingSettings(distanceFilter: fixed.distanceFilterMeters, desiredAccuracy: fixed.desiredAccuracyMeters)
+            return SheepFenceClient(engine: engine, provider: CoreLocationProvider(),
+                sampling: { _, _ in settings }, resetSampling: { settings }, usesAdaptiveSampling: false)
+        case .adaptive(let configuration):
+            var policy = SamplingPolicy(configuration: configuration)
+            return SheepFenceClient(engine: engine, provider: CoreLocationProvider(),
+                sampling: { distance, sample in
+                    policy.settings(nearestBoundaryMeters: distance, accuracy: sample.horizontalAccuracy, speed: sample.speed)
+                }, resetSampling: {
+                    policy = SamplingPolicy(configuration: configuration)
+                    return policy.settings(nearestBoundaryMeters: nil, accuracy: .infinity, speed: nil)
+                })
+        }
     }
 
-    public func events() async -> AsyncStream<GeofenceEvent> { await engine.events() }
+    @available(*, deprecated, message: "Place downloadPolicy and sampling in GeofenceConfiguration and use open(storeURL:configuration:)")
+    public static func open(storeURL: URL, configuration: GeofenceConfiguration,
+                            downloadPolicy: DownloadPolicy,
+                            samplingConfiguration: SamplingPolicyConfiguration) async throws -> SheepFenceClient {
+        try await open(storeURL: storeURL, configuration: GeofenceConfiguration(
+            maximumLocationAge: configuration.maximumLocationAge,
+            boundaryBufferMeters: configuration.boundaryBufferMeters,
+            maximumFutureSkew: configuration.maximumFutureSkew, expectedDatasetIDs: configuration.expectedDatasetIDs,
+            downloadPolicy: downloadPolicy, sampling: .adaptive(samplingConfiguration)))
+    }
+
+    public func events(bufferCapacity: Int = 256) async throws -> AsyncThrowingStream<GeofenceEvent, Error> {
+        try await engine.eventStream(bufferCapacity: bufferCapacity)
+    }
+    public func state() async -> MonitoringState { await engine.currentState() }
+    public func datasets() async -> [DatasetSummary] { await engine.datasets() }
+    public func regions(in datasetID: String? = nil) async throws -> [RegionSummary] { try await engine.regions(in: datasetID) }
+    public func distance(from coordinate: Coordinate, to region: RegionID) async throws -> RegionDistanceResult {
+        try await engine.distance(from: coordinate, to: region)
+    }
+    public func removeDataset(id: String) async throws -> DatasetRemovalResult {
+        let result = try await engine.removeDataset(id: id)
+        try await serializeLifecycle { await self.refreshProvider() }
+        return result
+    }
+    public func installSnapshot(data: Data) async throws -> InstallResult {
+        let result = try await engine.install(data: data)
+        try await serializeLifecycle { await self.refreshProvider() }
+        return result
+    }
     public func query(coordinate: Coordinate, in region: RegionID) async throws -> GeometryQueryResult {
         try await engine.query(coordinate: coordinate, in: region)
     }
-    public func evaluate(location: LocationSample) async throws -> [RegionEvaluation] {
-        try await engine.evaluate(location: location)
+    /// Pure one-shot evaluation; never changes monitoring history or emits events.
+    public func evaluate(location: LocationSample) async throws -> EvaluationBatch {
+        try await engine.evaluateOnce(location: location)
+    }
+    public func submit(location: LocationSample) async throws -> EvaluationBatch {
+        try await engine.submit(location: location)
     }
     public func updateAvailability(_ availability: LocationAvailability) async throws {
         try await engine.updateAvailability(availability)
@@ -120,11 +174,11 @@ import Foundation
                         await self.engine.reportEvaluationFailure(error, generation: engineGeneration)
                         return
                     } catch {
-                        await self.engine.reportEvaluationFailure(.storageFailed(String(describing: error)), generation: engineGeneration)
+                        await self.engine.reportEvaluationFailure(.storageFailed("Provider evaluation failed"), generation: engineGeneration)
                         return
                     }
                     guard !results.isEmpty, self.generation == epoch, self.mode == .sdkManaged else { return }
-                    let nearest = await self.engine.nearestBoundary(to: sample)
+                    let nearest = self.usesAdaptiveSampling ? await self.engine.nearestBoundary(to: sample) : nil
                     guard self.generation == epoch, self.mode == .sdkManaged else { return }
                     self.provider.apply(self.sampling(nearest, sample))
                 }

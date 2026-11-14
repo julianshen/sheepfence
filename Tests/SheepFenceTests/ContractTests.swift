@@ -19,12 +19,12 @@ import Testing
     }
     @Test func readyEmptyDatasetDiffersFromMissing() throws {
         // Readiness depends on installed datasets, not the number of regions.
-        try DatasetReadiness.check(installed: ["empty"], expected: ["empty"])
+        try DatasetReadinessCheck.check(installed: ["empty"], expected: ["empty"])
         #expect(throws: GeofenceError.datasetNotReady("missing")) {
-            try DatasetReadiness.check(installed: ["empty"], expected: ["missing"])
+            try DatasetReadinessCheck.check(installed: ["empty"], expected: ["missing"])
         }
         #expect(throws: GeofenceError.datasetNotReady(nil)) {
-            try DatasetReadiness.check(installed: [], expected: [])
+            try DatasetReadinessCheck.check(installed: [], expected: [])
         }
     }
     @Test func reducedAccuracyIsNotUnavailability() {

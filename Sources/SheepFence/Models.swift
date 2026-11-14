@@ -98,6 +98,9 @@ public struct InstallResult: Equatable, Sendable {
 }
 
 public enum GeofenceError: Error, Equatable, Sendable {
+    case sourceFailed(SourceFailure)
+    case storeAlreadyOpen
+    case eventBufferOverflow
     case invalidConfiguration(String)
     case invalidCoordinate
     case sourceModeConflict

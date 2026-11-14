@@ -1,5 +1,9 @@
 # Implementation progress
 
+**Current SDK completion:** see [sdk-progress.md](sdk-progress.md) for the new public
+API, 139-test independent/simulator results and updated iPhone benchmark. The earlier
+checkpoint history below is retained for provenance.
+
 ## Completed gate
 
 - Baseline local branch: `implementation/v1`, scaffold commit `cf0d4ac`.

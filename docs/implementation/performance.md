@@ -1,7 +1,8 @@
 # Device and field acceptance protocol
 
 Status: synthetic physical-device latency measured; field protocol not run.
-See [iPhone benchmark](benchmark-iphone-20261114.md). No energy, accuracy or
+See [current SDK device evidence](sdk-progress.md) and the
+[earlier iPhone benchmark](benchmark-iphone-20261114.md). No energy, accuracy or
 event-delay result is claimed.
 The package's deterministic capacity tests are correctness evidence only.
 

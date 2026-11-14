@@ -30,7 +30,7 @@ final class EphemeralTransport: URLTransport, @unchecked Sendable {
                 if Task.isCancelled { throw CancellationError() }
                 if data.count >= maximumBytes {
                     bytes.task.cancel()
-                    throw GeofenceError.downloadFailed("Download exceeded \(maximumBytes) bytes")
+                    throw GeofenceError.sourceFailed(.byteLimitExceeded(maximumBytes: maximumBytes))
                 }
                 data.append(byte)
             }
@@ -64,20 +64,22 @@ final class HTTPDownloader: Sendable {
         try Task.checkCancellation()
         if url.isFileURL { return try readLocal(url) }
         guard url.scheme?.lowercased() == "https" else {
-            throw GeofenceError.unsupportedSource(url)
+            // The rejected scheme is never echoed back: source errors must not
+            // carry URLs (credentials could ride in the URL).
+            throw GeofenceError.sourceFailed(.unsupportedScheme)
         }
         return try await readHTTPS(url)
     }
 
     private func readLocal(_ url: URL) throws -> Data {
         guard FileManager.default.fileExists(atPath: url.path) else {
-            throw GeofenceError.downloadFailed("Local source not found: \(url)")
+            throw GeofenceError.sourceFailed(.fileRead)
         }
         let handle: FileHandle
         do {
             handle = try FileHandle(forReadingFrom: url)
         } catch {
-            throw GeofenceError.downloadFailed("Cannot read local source: \(error)")
+            throw GeofenceError.sourceFailed(.fileRead)
         }
         defer { try? handle.close() }
         var data = Data()
@@ -87,11 +89,11 @@ final class HTTPDownloader: Sendable {
             do {
                 chunk = try handle.read(upToCount: 65536)
             } catch {
-                throw GeofenceError.downloadFailed("Cannot read local source: \(error)")
+                throw GeofenceError.sourceFailed(.fileRead)
             }
             guard let chunk, !chunk.isEmpty else { break }
             if data.count + chunk.count > policy.maximumBytes {
-                throw GeofenceError.downloadFailed("Download exceeded \(policy.maximumBytes) bytes")
+                throw GeofenceError.sourceFailed(.byteLimitExceeded(maximumBytes: policy.maximumBytes))
             }
             data.append(chunk)
         }
@@ -110,23 +112,26 @@ final class HTTPDownloader: Sendable {
                 } catch let error as GeofenceError {
                     throw error
                 } catch {
-                    throw GeofenceError.downloadFailed("Transport error: \(error)")
+                    // Never surface the raw NSError: its description can embed
+                    // request URLs. Structured .network carries no details.
+                    throw GeofenceError.sourceFailed(.network)
                 }
                 guard let http = response as? HTTPURLResponse else {
-                    throw GeofenceError.downloadFailed("Non-HTTP response")
+                    throw GeofenceError.sourceFailed(.network)
                 }
                 guard (200...299).contains(http.statusCode) else {
-                    throw GeofenceError.downloadFailed("HTTP status \(http.statusCode)")
-                }
-                // Reject redirects: delegate already rejects, but also check URL identity.
-                if let finalURL = http.url, finalURL.absoluteString != url.absoluteString {
-                    throw GeofenceError.unsupportedSource(finalURL)
+                    if (300...399).contains(http.statusCode) {
+                        // Redirects are rejected, never followed. The response's
+                        // status alone is reported; no redirect target URL leaks.
+                        throw GeofenceError.sourceFailed(.redirectRejected)
+                    }
+                    throw GeofenceError.sourceFailed(.httpStatus(http.statusCode))
                 }
                 return data
             }
             group.addTask {
                 try await Task.sleep(nanoseconds: timeoutNanos)
-                throw GeofenceError.downloadFailed("Download timed out after \(self.policy.timeout) seconds")
+                throw GeofenceError.sourceFailed(.timeout)
             }
             defer { group.cancelAll() }
             let result = try await group.next()!

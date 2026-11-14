@@ -57,6 +57,10 @@ import SwiftUI
               !ranRequestedBenchmark else { return }
         ranRequestedBenchmark = true
         await benchmark()
+        if ProcessInfo.processInfo.arguments.contains("--sdk-smoke") {
+            do { try await sdkSmoke() }
+            catch { status = "SDK smoke failed: \(error)" }
+        }
         let output = status + "\n" + report
         print(output)
         do {
@@ -67,15 +71,53 @@ import SwiftUI
         } catch { print("Could not save benchmark report: \(error)") }
     }
 
+    /// Opt-in integration check, separate from GPS/route acceptance. Never prompts for permission.
+    private func sdkSmoke() async throws {
+        busy = true
+        defer { busy = false }
+        let active = try await open(name: "sdk-smoke")
+        guard let fixture = Bundle.main.url(forResource: "campus-v3", withExtension: "geojson") else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        _ = try await active.installSnapshot(from: fixture)
+        try await active.startMonitoring(mode: .sdkManaged)
+        let started = await active.state()
+        guard started.mode == .sdkManaged else { throw BenchmarkError.incorrectLifecycle }
+        await active.stopMonitoring()
+        let stopped = await active.state()
+        guard stopped.mode == nil, stopped.evaluations.isEmpty,
+              stopped.availability.reason == .monitoringStopped else { throw BenchmarkError.incorrectLifecycle }
+        try await active.startMonitoring(mode: .hostProvided)
+        let sample = LocationSample(coordinate: Coordinate(longitude: 10.003, latitude: 20.002),
+                                    timestamp: Date(), horizontalAccuracy: 1)
+        let submitted = try await active.submit(location: sample)
+        guard submitted.results.count == 2,
+              submitted.results.allSatisfy({ $0.observation == .confirmed(.inside) }) else { throw BenchmarkError.incorrectMatches }
+        let before = await active.state()
+        _ = try await active.evaluate(location: LocationSample(coordinate: Coordinate(longitude: 10.1, latitude: 20.1),
+                                                               timestamp: Date(), horizontalAccuracy: 1))
+        let after = await active.state()
+        guard before == after else { throw BenchmarkError.incorrectLifecycle }
+        let distance = try await active.distance(from: sample.coordinate,
+                                                 to: RegionID(datasetID: "com.example.campus", featureID: "garden"))
+        guard distance.distanceToRegionMeters == 0,
+              (distance.distanceToBoundaryMeters ?? 0) > 0 else { throw BenchmarkError.incorrectMatches }
+        try await active.updateAvailability(LocationAvailability(reason: .noLocation))
+        let unavailable = await active.state()
+        guard unavailable.evaluations.allSatisfy({ $0.observation == .unavailable(.noLocation) && $0.lastConfirmed != nil }) else {
+            throw BenchmarkError.incorrectLifecycle
+        }
+        await active.stopMonitoring()
+        report += "SDK smoke passed: SDK-managed start/stop, host submit, pure-query state isolation, distance, explicit host noLocation/history. No permission prompt or route test.\n"
+    }
+
     func requestPermission() { permissions.requestWhenInUseAuthorization() }
 
     private func open(name: String) async throws -> SheepFenceClient {
         let directory = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask,
                                                     appropriateFor: nil, create: true)
         return try await SheepFenceClient.open(storeURL: directory.appendingPathComponent(name + ".sqlite"),
-            configuration: GeofenceConfiguration(maximumLocationAge: 86_400),
-            downloadPolicy: DownloadPolicy(maximumBytes: 5_000_000, timeout: 30),
-            samplingConfiguration: SamplingPolicyConfiguration())
+            configuration: GeofenceConfiguration(maximumLocationAge: 86_400))
     }
 
     func start() async {
@@ -89,17 +131,24 @@ import SwiftUI
             _ = try await active.installSnapshot(from: fixture)
             guard generation == epoch, UIApplication.shared.applicationState == .active else { return }
             client = active
-            let stream = await active.events()
+            let stream = try await active.events()
             events = Task { [weak self] in
-                for await event in stream {
-                    guard !Task.isCancelled else { break }
-                    switch event {
-                    case .locationAvailabilityChanged(let value):
-                        self?.locationStatus = "Availability: \(String(describing: value.reason)); reduced accuracy: \(value.reducedAccuracy)"
-                    case .evaluationFailed(let error): self?.locationStatus = "Evaluation failed: \(error)"
-                    default: self?.locationStatus = "Received region event (coordinates not recorded)"
+                do {
+                    for try await event in stream {
+                        guard !Task.isCancelled else { break }
+                        switch event {
+                        case .locationAvailabilityChanged(let value):
+                            self?.locationStatus = "Availability: \(String(describing: value.reason)); reduced accuracy: \(value.reducedAccuracy)"
+                        case .stateSnapshot(let state):
+                            self?.locationStatus = "State: \(String(describing: state.availability.reason)); \(state.evaluations.count) regions"
+                        case .evaluated(let batch):
+                            let count = batch.results.filter { $0.observation == .confirmed(.inside) }.count
+                            self?.locationStatus = "Confirmed inside \(count) regions; \(batch.results.count) evaluated"
+                        case .evaluationFailed(let error): self?.locationStatus = "Evaluation failed: \(error)"
+                        default: break
+                        }
                     }
-                }
+                } catch { self?.locationStatus = "Event stream ended: \(error)" }
             }
             try await active.startMonitoring(mode: .sdkManaged)
         } catch { locationStatus = "Error: \(error)" }
@@ -136,7 +185,8 @@ import SwiftUI
                         longitude: overlapping ? 10 : 10 + Double(region) * 0.05, latitude: 20),
                         timestamp: base.addingTimeInterval(Double(index) * 0.01), horizontalAccuracy: 1)
                     let start = clock.now
-                    let result = try await active.evaluate(location: sample)
+                    let batch = try await active.evaluate(location: sample)
+                    let result = batch.results
                     let elapsed = start.duration(to: clock.now).components
                     if index >= 200 { times.append(Double(elapsed.seconds) * 1000 + Double(elapsed.attoseconds) / 1e15) }
                     let ids = Set(result.filter { $0.observation == .confirmed(.inside) }.map(\.regionID.featureID))
@@ -151,5 +201,5 @@ import SwiftUI
             status = "Benchmark complete"
         } catch { status = "Failed: \(error)" }
     }
-    enum BenchmarkError: Error { case incorrectMatches, leftForeground }
+    enum BenchmarkError: Error { case incorrectMatches, leftForeground, incorrectLifecycle }
 }

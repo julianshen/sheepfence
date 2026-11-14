@@ -46,3 +46,12 @@ Launch with `--benchmark` to run automatically when foreground active and save
 the manual controls. This option does not request location permission.
 
 Build product: `.build/device-host/Build/Products/Release-iphoneos/SheepFenceHost.app`.
+
+## Completed SDK validation
+
+The host uses the migrated pure `evaluate`/batch API and throwing event subscriptions.
+Latest results are in [SDK completion evidence](../../docs/implementation/sdk-progress.md).
+For an opt-in public-API lifecycle/distance check, launch with both `--benchmark`
+and `--sdk-smoke`. This does not request permission and reports injected host noLocation
+separately from real GPS/route validation. A successful report contains `SDK smoke passed`.
+Keep the phone unlocked and the app foreground active throughout the check.

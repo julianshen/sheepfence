@@ -17,12 +17,16 @@ struct MonitoringSession: Sendable {
         mode = nil; generation &+= 1
         return true
     }
+    func requireActiveHostSource() throws {
+        guard mode != nil else { throw GeofenceError.monitoringNotStarted }
+        try requireHostSource()
+    }
     func requireHostSource() throws {
         if mode == .sdkManaged { throw GeofenceError.sourceModeConflict }
     }
 }
 
-struct DatasetReadiness {
+struct DatasetReadinessCheck {
     static func check(installed: Set<String>, expected: Set<String>) throws {
         if let missing = expected.subtracting(installed).sorted().first {
             throw GeofenceError.datasetNotReady(missing)
