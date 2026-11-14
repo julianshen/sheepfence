@@ -18,3 +18,8 @@ The user authorized implementation of reviewed plan revision 3. Existing tabs sh
 OpenCode implements `GeoJSONDecoder.decode(_ data: Data) throws -> ValidatedSnapshot` (static), and `Geometry.contains(_ point: Coordinate, in geometry: RegionGeometry) -> Bool`, `Geometry.distanceToBoundary(_ point: Coordinate, in geometry: RegionGeometry) -> Double` (meters, static). Engine may initially compute distance for every enabled region; safe pruning is an optimization only after counterexamples pass.
 
 Pi implements `CoreDataSnapshotStore` conforming to SnapshotStore, with `init(url: URL) throws` for SQLite durability and an explicit in-memory testing option. `commit` returns SnapshotCommit containing the actual effective snapshot. Implement `HTTPSnapshotSource(policy:)` conforming to SnapshotSource for local and HTTPS reads. Provider implements the existing MainActor LocationProvider protocol. Send proposed API additions to Codex before editing shared types.
+
+## Integration clarifications
+
+- Starting monitoring reports noLocation until a valid sample arrives (or the current authorization/service reason). First valid sample reports available. Provider evaluation errors such as expected-data-not-ready are emitted as evaluationFailed rather than silently discarded. Explicit query/install errors still throw.
+- Pausing provider acquisition because all regions become disabled invalidates the facade callback generation; delayed callbacks from that acquisition run cannot act after re-enabling data.

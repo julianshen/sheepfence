@@ -6,11 +6,21 @@ source with the `SheepFence` library product.
 
 ## Status
 
-This is a compiling project scaffold, not a functioning geofence SDK. It includes
-public value types, validated configuration, the proposed client/event contract,
-an internal persistence contract, and the specification's sample GeoJSON fixture.
-There is no concrete client, geometry evaluator, importer, Core Data store,
-network downloader, or location provider yet.
+Implementation is in progress. The package now contains strict GeoJSON import,
+polygon/hole/MultiPolygon containment, uncertainty-aware observations, serialized
+Core Data persistence, immutable query snapshots, and an internal foreground client
+facade. Tests exercise real import/store/engine paths for both 100-region workloads.
+
+It is **not ready for app integration**: the public construction path, production
+snapshot downloader, Core Location provider, and adaptive sampling are not wired
+up yet. Final cross-review, device lifecycle checks, and field/performance acceptance
+remain pending. See [implementation progress](docs/implementation/progress.md).
+
+Distance evaluation uses an approximate local meter model, currently limited to
+query latitudes within 80 degrees and vertices within one degree of the query.
+Outside this support envelope it returns uncertainty rather than claiming a precise
+boundary separation. Pure coordinate containment preserves GeoJSON straight edges;
+the dataset itself is not rejected for exceeding the meter-model envelope.
 
 ## Development
 

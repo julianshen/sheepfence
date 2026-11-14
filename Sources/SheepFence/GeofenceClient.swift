@@ -9,6 +9,8 @@ public struct DatasetChange: Equatable, Sendable {
     public let evaluations: [RegionEvaluation]
 }
 public enum GeofenceEvent: Equatable, Sendable {
+    /// Background provider evaluation errors, distinct from import errors thrown by install.
+    case evaluationFailed(GeofenceError)
     case baseline(RegionEvaluation)
     case entered(RegionEvaluation)
     case exited(RegionEvaluation)

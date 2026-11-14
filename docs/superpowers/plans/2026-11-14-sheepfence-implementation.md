@@ -49,11 +49,11 @@ Create `docs/implementation/decisions.md`. Proposed decisions below are recommen
 
 **Files:** Modify `Sources/SheepFence/{Models.swift,Configuration.swift,GeofenceClient.swift}` and `Sources/SheepFence/Storage/SnapshotStore.swift`; create `Sources/SheepFence/Geometry/GeometryTypes.swift`, `Sources/SheepFence/Import/ValidatedSnapshot.swift`, `docs/implementation/decisions.md`, `Tests/SheepFenceTests/ContractTests.swift`.
 
-- [ ] Draft result, snapshot, observation-input, event, source-mode, clock, and storage contracts for both workers to consume. Codex owns the initial SnapshotSource and LocationProvider protocols, the host-facing availability update method, and `Tests/SheepFenceTests/Support/PreparedSnapshotBuilder.swift`; pi implements those frozen protocols thereafter.
-- [ ] Add contract tests for revision identity, empty-versus-missing datasets, and supported client calls; run `swift test --filter ContractTests` and record the intended failing condition.
-- [ ] Implement value types/contracts only, then rerun the focused tests. Keep raw decoded data distinct from validated geometry.
-- [ ] Have both peers review the decisions and public API; resolve blockers before handing out parallel tasks. Exit requires tests compiling against the chosen revision-bearing query and Boolean convenience exception, source-mode exclusivity, host availability updates, and empty/missing dataset behavior. Pure GeometryQueryResult intentionally has binary membership; CLLocation-based RegionEvaluation separately carries uncertainty/unavailability.
-- [ ] Commit the reviewed contract baseline locally. Attach the commit ID to both task prompts.
+- [x] Draft result, snapshot, observation-input, event, source-mode, clock, and storage contracts for both workers to consume. Codex owns the initial SnapshotSource and LocationProvider protocols, the host-facing availability update method, and `Tests/SheepFenceTests/Support/PreparedSnapshotBuilder.swift`; pi implements those frozen protocols thereafter.
+- [x] Add contract tests for revision identity, empty-versus-missing datasets, and supported client calls; run `swift test --filter ContractTests` and record the intended failing condition.
+- [x] Implement value types/contracts only, then rerun the focused tests. Keep raw decoded data distinct from validated geometry.
+- [x] Have both peers review the decisions and public API; resolve blockers before handing out parallel tasks. Exit requires tests compiling against the chosen revision-bearing query and Boolean convenience exception, source-mode exclusivity, host availability updates, and empty/missing dataset behavior. Pure GeometryQueryResult intentionally has binary membership; CLLocation-based RegionEvaluation separately carries uncertainty/unavailability.
+- [x] Commit the reviewed contract baseline locally. Attach the commit ID to both task prompts.
 
 Contract sketch (final names are set in Task 0):
 
@@ -216,4 +216,4 @@ Completion is tiered: **unit subsystem ready**, **integrated functional acceptan
 
 Revision 2 incorporated explicit candidate, orientation, host-availability, download and acceptance contracts. Dataset-driven reevaluations remain within datasetChanged per spec section 3; pure coordinate results remain binary because uncertainty belongs to CLLocation evaluation. Revision 3 added pi's no-op install state/event invariants and representative field accuracy/power protocol. Both reviewers verified the final revision and reported no remaining plan blockers.
 
-Approval concerns the plan's completeness, not execution or acceptance. Gate 0 decisions remain explicit implementation prerequisites. No implementation tasks have started. Execution will use the three existing agent tabs and cross-review ownership above.
+Approval concerns the plan's completeness, not execution or acceptance. Gate 0 decisions remain explicit implementation prerequisites. Implementation authorized by the user and in progress. Task 0 is complete at c1871d1. See docs/implementation/progress.md for verified work, pending reviews, and the pi-provider blocker. Existing agent tabs and cross-review ownership remain in use.
