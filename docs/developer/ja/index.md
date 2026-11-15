@@ -39,8 +39,8 @@ SheepFence は、フォアグラウンドで動作するポリゴン型ジオフ
 
 ## 現在の状態
 
-SDK は `main` ブランチで提供しており、バージョンタグは未公開です。記録済みのチェックポイントでは 25 スイート・139 テスト、シミュレータテスト、iPhone のスモークテストと 100 領域の合成ベンチマークに合格しています。Codex、OpenCode、pi による相互レビューも完了しています。これらは特定時点の記録であり、性能保証ではありません。
+SheepFence **v1.0.0** は Swift Package Manager で利用でき、**Apache License 2.0** を採用しています。[リリースノート](https://github.com/julianshen/sheepfence/releases/tag/v1.0.0)をご覧ください。記録済みのチェックポイントでは 25 スイート・139 テスト、シミュレータテスト、iPhone のスモークテストと 100 領域の合成ベンチマークに合格しています。Codex、OpenCode、pi による相互レビューも完了しています。これらは特定時点の記録であり、性能保証ではありません。
 
-対応する統合形態はフォアグラウンドです。実経路での精度、消費電力の調整、権限変更時の実機検証は別途必要です。バージョン付き配布の前にライセンスも選定する必要があります。
+対応する統合形態はフォアグラウンドです。実経路での精度、消費電力の調整、権限変更時の実機検証は別途必要です。
 
 [検証記録（英語）](https://github.com/julianshen/sheepfence/blob/main/docs/implementation/sdk-progress.md) · [ソースコード](https://github.com/julianshen/sheepfence)

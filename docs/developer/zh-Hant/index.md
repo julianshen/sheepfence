@@ -39,8 +39,8 @@ SheepFence 是用於前景多邊形地理圍欄的 Swift SDK。匯入自己的 G
 
 ## 目前狀態
 
-目前從 `main` 分支提供 SDK，尚未發佈版本標籤。已記錄的檢查點通過 25 個測試套件的 139 項測試、模擬器測試，以及 iPhone 冒煙測試與 100 區域合成效能測試，並經 Codex、OpenCode、pi 交叉審查。這些是特定檢查點的結果，不是效能保證。
+SheepFence **v1.0.0** 已透過 Swift Package Manager 發布，採用 **Apache License 2.0**。請參閱[版本說明](https://github.com/julianshen/sheepfence/releases/tag/v1.0.0)。已記錄的檢查點通過 25 個測試套件的 139 項測試、模擬器測試，以及 iPhone 冒煙測試與 100 區域合成效能測試，並經 Codex、OpenCode、pi 交叉審查。這些是特定檢查點的結果，不是效能保證。
 
-目前支援前景整合。真實路線精度、耗電校準及權限變更的實機驗收仍須另行完成。版本化發行前也須選定授權條款。
+目前支援前景整合。真實路線精度、耗電校準及權限變更的實機驗收仍須另行完成。
 
 [驗證紀錄（英文）](https://github.com/julianshen/sheepfence/blob/main/docs/implementation/sdk-progress.md) · [原始碼](https://github.com/julianshen/sheepfence)

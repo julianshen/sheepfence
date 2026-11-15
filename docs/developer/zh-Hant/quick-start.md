@@ -4,13 +4,13 @@
 
 ## 1. 加入 Swift 套件
 
-在 Xcode 選擇 **File → Add Package Dependencies**，輸入 `https://github.com/julianshen/sheepfence`，選擇 `main` 分支，並將 `SheepFence` 產品加入 App target。Swift 套件可使用：
+在 Xcode 選擇 **File → Add Package Dependencies**，輸入 `https://github.com/julianshen/sheepfence`，選擇 **Up to Next Major Version**，起始版本為 **1.0.0**，並將 `SheepFence` 產品加入 App target。Swift 套件可使用：
 
 ```swift
-.package(url: "https://github.com/julianshen/sheepfence", branch: "main")
+.package(url: "https://github.com/julianshen/sheepfence", from: "1.0.0")
 ```
 
-在 target 相依項目加入 `.product(name: "SheepFence", package: "sheepfence")`。需要 Swift 6 與 iOS 16+。macOS 13+ 用於套件及引擎測試，不代表承諾支援 macOS 定位監測。需要可重現的預發佈整合時，請固定使用特定 commit。
+在 target 相依項目加入 `.product(name: "SheepFence", package: "sheepfence")`。需要 Swift 6 與 iOS 16+。macOS 13+ 用於套件及引擎測試，不代表承諾支援 macOS 定位監測。請提交 App 的 `Package.resolved`，以確保相依套件解析可重現。
 
 ## 2. 開啟並保留一個用戶端
 

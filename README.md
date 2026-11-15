@@ -15,8 +15,11 @@ offline snapshots, accuracy-aware observations and confirmed entry/exit events.
 ## Install
 
 Add `https://github.com/julianshen/sheepfence` in Xcode's package dependencies and
-select the `SheepFence` product. Development currently uses the `main` branch; there
-is no versioned release tag yet.
+select the `SheepFence` product with **Up to Next Major Version**, starting at **1.0.0**.
+
+```swift
+.package(url: "https://github.com/julianshen/sheepfence", from: "1.0.0")
+```
 Requires Swift 6 and iOS 16+. macOS 13+ is supported for package/engine testing, not
 as a promised macOS location-monitoring product. No third-party dependencies.
 
@@ -137,6 +140,10 @@ swift test
 
 The SDK has deterministic tests for storage, geometry, public integration, availability,
 events, cancellation and capacity. Physical GPS/lifecycle and field accuracy/energy
-acceptance remain separate from synthetic tests; this is pre-release software. There
-is no performance SLA or background-monitoring guarantee. Release version and licensing
-remain to be selected before a versioned distribution.
+acceptance remain separate from synthetic tests. There is no performance SLA or
+background-monitoring guarantee. See [v1.0.0 release notes](CHANGELOG.md) for scope
+and known limitations.
+
+## License
+
+Apache License 2.0. See [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md).

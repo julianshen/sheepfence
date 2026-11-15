@@ -4,13 +4,13 @@
 
 ## 1. Swift パッケージを追加する
 
-Xcode の **File → Add Package Dependencies** で `https://github.com/julianshen/sheepfence` を入力し、`main` ブランチを選択して `SheepFence` 製品をアプリの target に追加します。Swift パッケージでは次のように指定します。
+Xcode の **File → Add Package Dependencies** で `https://github.com/julianshen/sheepfence` を入力し、**Up to Next Major Version** で **1.0.0** を指定し、 `SheepFence` 製品をアプリの target に追加します。Swift パッケージでは次のように指定します。
 
 ```swift
-.package(url: "https://github.com/julianshen/sheepfence", branch: "main")
+.package(url: "https://github.com/julianshen/sheepfence", from: "1.0.0")
 ```
 
-target の依存関係には `.product(name: "SheepFence", package: "sheepfence")` を追加します。Swift 6 と iOS 16+ が必要です。macOS 13+ はパッケージ・エンジンのテスト用であり、macOS での位置監視を保証するものではありません。再現可能な導入が必要な場合は、特定の commit に固定してください。
+target の依存関係には `.product(name: "SheepFence", package: "sheepfence")` を追加します。Swift 6 と iOS 16+ が必要です。macOS 13+ はパッケージ・エンジンのテスト用であり、macOS での位置監視を保証するものではありません。依存関係の解決結果を再現できるよう、アプリの `Package.resolved` をコミットしてください。
 
 ## 2. クライアントを開いて保持する
 

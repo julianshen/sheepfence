@@ -48,4 +48,4 @@ xcodebuild docbuild -scheme SheepFence -destination 'generic/platform=iOS' \
 
 保持公開 API、程式範例及三種語言一致；API 名稱與程式碼不翻譯。介面翻譯位於 `docs/site/assets/editor/messages.json`。新增行為時加入針對性的回歸測試，特別注意快照交易、位置恢復及串流取消。錯誤回報應附最小重現。僅在實際執行驗證後更新測試證據。
 
-此專案為預發布版本；版本標籤、授權與實地驗收是獨立發布決策。
+目前版本為 v1.0.0，採用 Apache License 2.0。SDK 使用者應選用版本標籤；`main` 為開發分支。實地驗收與發布測試分別處理。

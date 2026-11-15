@@ -48,7 +48,7 @@ The archive is generated under `.build/documentation/Build/Products/Debug-iphone
 
 Keep public API behavior and examples aligned. Add focused regression coverage for behavior changes, especially snapshot transactions, availability recovery and stream cancellation. Include a minimal reproduction with bug reports. Existing acceptance records describe a particular checkpoint; update evidence only after actually running the corresponding checks.
 
-This is pre-release software. Version tags, licensing and field acceptance are separate release decisions.
+The current release is v1.0.0 under Apache License 2.0. Use version tags for SDK consumers; `main` remains the development branch. Field acceptance is separate from release testing.
 
 ## Translations
 

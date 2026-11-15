@@ -38,8 +38,8 @@ Snapshot updates are transactional. A rejected update leaves the committed datas
 
 ## Current status
 
-The SDK is available from the repository's `main` branch; no versioned release is published. The implementation was independently reviewed by Codex, OpenCode and pi. The recorded checkpoint passed 139 tests in 25 suites, simulator tests, and an iPhone smoke check with a 100-area synthetic benchmark. These are checkpoint results, not a performance guarantee.
+SheepFence **v1.0.0** is available through Swift Package Manager under **Apache License 2.0**. See the [release notes](https://github.com/julianshen/sheepfence/releases/tag/v1.0.0). The implementation was independently reviewed by Codex, OpenCode and pi. The recorded checkpoint passed 139 tests in 25 suites, simulator tests, and an iPhone smoke check with a 100-area synthetic benchmark. These are checkpoint results, not a performance guarantee.
 
-Foreground use is the supported integration model. Real-route accuracy, energy calibration and permission-state field acceptance remain separate work. Licensing must be selected before a versioned distribution.
+Foreground use is the supported integration model. Real-route accuracy, energy calibration and permission-state field acceptance remain separate work.
 
 [View validation evidence](https://github.com/julianshen/sheepfence/blob/main/docs/implementation/sdk-progress.md) · [Browse the source](https://github.com/julianshen/sheepfence)

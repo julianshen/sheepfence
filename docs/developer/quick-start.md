@@ -4,13 +4,13 @@ Open a persistent client, install a snapshot and evaluate a location. One-shot q
 
 ## 1. Add the Swift package
 
-In Xcode, choose **File → Add Package Dependencies**, enter `https://github.com/julianshen/sheepfence`, select the `main` branch and add the `SheepFence` product to your app target. For a Swift package:
+In Xcode, choose **File → Add Package Dependencies**, enter `https://github.com/julianshen/sheepfence`, choose **Up to Next Major Version**, starting at **1.0.0**, and add the `SheepFence` product to your app target. For a Swift package:
 
 ```swift
-.package(url: "https://github.com/julianshen/sheepfence", branch: "main")
+.package(url: "https://github.com/julianshen/sheepfence", from: "1.0.0")
 ```
 
-Add `.product(name: "SheepFence", package: "sheepfence")` to the target's dependencies. Requires Swift 6 and iOS 16+. macOS 13+ supports package/engine testing; macOS location monitoring is not a promised product surface. Pin a commit in your dependency resolution if you need a reproducible pre-release integration.
+Add `.product(name: "SheepFence", package: "sheepfence")` to the target's dependencies. Requires Swift 6 and iOS 16+. macOS 13+ supports package/engine testing; macOS location monitoring is not a promised product surface. Commit your app’s `Package.resolved` for reproducible dependency resolution.
 
 ## 2. Open and retain one client
 
